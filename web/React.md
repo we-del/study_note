@@ -1,35 +1,130 @@
 #   React
 
+**react讲的是单页面开发,学习如何多页面开发(看文章即可)**
+
 + 特别注意
 
   ```java
   /*
+  受控组件以类的方式定义，非受控组件使用函数方式定义？
+  ==================================================
+   // 关于js
    1. 在js中要注意this指向问题，this一般指向其调用者，但js中箭头函数this指向和外层this指向一致，函数的返回值无异常(返回给调用者)， 因此在特殊使用我们可以使用call,apply,bind 去改变函数this的指向
-   2. 在引入资源时，该资源会被先执行一遍(已经引入的资源在引入时不会在执行，因为其已经加载过)
-   3. 在js事件调用时，如果需要接收参数来完成功能，就需要使用静态代理模式来解决问题(因为js底层在调用时，接收的需要是一个函数地址，且只会传入一个环境变量参数，因此需要使用静态代理模式帮助完成参数传递)
+   2. 在js事件调用时，如果需要接收参数来完成功能，就需要使用静态代理模式来解决问题(因为js底层在调用时，接收的需要是一个函数地址，且只会传入一个环境变量参数，因此需要使用静态代理模式帮助完成参数传递)
    	 如：a.onclick = (e)=>{ fun(uuid,e)} // 当点击事件触发后，js底层调用此箭头函数(代理函数)，然后由箭头函数(代理函数)去调用另一个真正需要执行的函数(实现函数传递) 
-   4. react在调用了一个函数没有传递正确的参数时，会阻塞程序运行，且不会提示错误
-   5. react的运转是生命周期函数驱动的，render函数多用于返回虚拟dom到界面进行显示，componentDidMount多用于启动整个组件的运行(类型于java的main函数),getDerivedStateFromProps 多用于将外部Props数据挂载到状态中，componentDidUpdate 多用于页面在更新后做处理
-   6. npm run eject 可以拿到当前react配置的webpack文件(webpack.config.js,我们可以再此基础上做扩展)
+   	 
+   ==================================================
+   // 关于react	 
+   1. react在调用了一个函数没有传递正确的参数时，会阻塞程序运行，且不会提示错误
+   2. react的运转是生命周期函数和事件驱动的，render函数多用于返回虚拟dom到引用该组件实例的位置，componentDidMount多用于启动整个组件的运行(类型于java的main函数),getDerivedStateFromProps 多用于将外部Props数据挂载到状态中，componentDidUpdate 多用于页面在更新后做处理(相当于java中的main) ， 事件多用于来开启 更新生命周期函数流(观察者模式)
+   3. npm run eject 可以拿到当前react配置的webpack文件(webpack.config.js,我们可以再此基础上做扩展)
+   4. react中的样式最终都会统一加载到全局(先由各组件引入然后由app汇总到全局)，因此所有的页面的标签的类名或id不能重名，否则会导致样式串流(可以用子类选择器 #title>li)
+   
+    ==================================================
+   // 前端路由
+   1.再使用新版本react脚手架后，使用 react-router-dom中的Route标签可能跳转会失效，去掉index.js中的strict组件即可
+   	如 root.render(          
+         //  <React.StrictMode>  // 去掉这个组件即可
+              <BrowserRouter>
+                  <App/>
+              </BrowserRouter>
+        //  </React.StrictMode>
+      );
+      
+   2. 在react-router-dom 5.2.0版本以前,前端路由为模糊匹配，在以后为精准匹配; 模糊匹配 是前端路由去匹配地址(该地址为 www.xx.com/ 后的部分)，且前端路由需和地址的首部的某个片段完整匹配，精准匹配指 前端路由指只有全部匹配才能匹配成功
+   	模糊匹配实例  // 因此在模糊匹配中，需要把难匹配的放前面，好匹配的放后面，或在其行内添加 exact
+   	   <Switch>
+           <Route path={"/"} component={RootPage}/>//每次路由匹配时都被此路由抢占,因此/路由应该滞后放置
+           <Route path={"/index"} component={Index}/>
+           <Route path={"/items"} component={Items}/>
+         </Switch> 
+         
+   3. 前端路由中，多级路由的显示，需同时出现在一个界面中(如点击一个三级路由，其三，二和一级路由都会出现在此界面)
+   ==================================================
+   // 其他
+   1. 在引入资源时，该资源会被先执行一遍(已经引入的资源在引入时不会在执行，因为其已经加载过)
+   2. 文档注释非常重要，每一个函数都应配置一个文档注释
+   3. 组件包裹组件可以把被包裹组件当作props参数挂载到包裹组件的props属性上
+  */
+  ```
+  
+
+
+
++ react脚手架配置less,sass
+
+  ```java
+  /*
+  注意
+  	scss 是 sass的一个超集，支持了sass的所有写法，不过再属性编写的时候不同，scss为括号包裹，且每个样式必须以;结尾。而sass是缩进表示包括，每个样式不能以l结尾
+  	缩进显示层级和{}包裹显示层级效果一致，再当作判断使用时，前一个条件为true是才会进入，为false不进入；再当作包裹层级使用时，默认进入一次
+   配置sass
+   	react脚手架默认支持sass(已经完成了sass的webpack配置，我们使用只需要下载对应的包即可使用)
+    	安装sass依赖 ： npm i sass sass-loader -D
+    	注意
+    		sass和scss都是sass的子集
+    
+   配置less
+   	安装less依赖： npm i less less-loader -D
+   	配置方法
+   		前言
+   			参考网站 https://blog.csdn.net/m0_59324574/article/details/120046927
+   		1.查找 node_modules 下面的react-scripts/config/webpack.config.js 进行打开
+   		2.在sassRgex 和sassModuleRegex下添加以下常量
+              const lessRegex = /\.(less)$/;
+              const lessModuleRegex = /\.module\.(less)$/;
+   		3.在sass-loader的配置上一句添加以下配置
+   		{
+                test: lessRegex,
+                exclude: lessModuleRegex,
+                use: getStyleLoaders(
+                    {
+                      importLoaders: 3,
+                      sourceMap: isEnvProduction
+                          ? shouldUseSourceMap
+                          : isEnvDevelopment,
+                      modules: {
+                        mode: 'icss',
+                      },
+                    },
+                    'less-loader'
+                ),
+                sideEffects: true,
+              },
+              {
+                test: lessModuleRegex,
+                use: getStyleLoaders(
+                    {
+                      importLoaders: 3,
+                      sourceMap: isEnvProduction
+                          ? shouldUseSourceMap
+                          : isEnvDevelopment,
+                      modules: {
+                        mode: 'local',
+                        getLocalIdent: getCSSModuleLocalIdent,
+                      },
+                    },
+                    'less-loader'
+                ),
+              },
   */
   ```
   
   
 
-报错的通常原因，在一个undefined中读取属性，变量未定义，语法错误，没打括号等
-
 ## 技巧
 
-+ 解决rfeact报错问题
++ 解决react报错问题
 
   ```java
   /*
    18.0 后 react不支持 ReactDOM.render()方法需要使用下列方法
-   import React from 'react';
+  import React from 'react';
   import ReactDOM from 'react-dom';
   import App from './App';
-   
   import { createRoot } from 'react-dom/client';
+  
+  // 对函数调用进行了解耦
   const container = document.getElementById('root');
   const root = createRoot(container);
   root.render(<App />);
@@ -62,7 +157,7 @@
 
   
 
-+ 组件实例对象创建到页面渲染过程
++ 组件实例对象创建到页面渲染过程(发生了什么)
 
   ```java
   /*
@@ -73,18 +168,31 @@
   实例对象创建过程
    		js底层会去调用该组件类的构造器 , 然后再其中隐式调用super()关键字去调用其父类的构造器(如果父类中使用了constructor就需要自己手动调用super()),一直往复如此，直到加载到顶级父类，然后从顶级父类类到一级父类,...,到当前子类，执行static修饰的语句，并放入一个地址空间中，该空间和子类存在映射关系 ，此时类加载完毕，然后从从顶级父类类到一级父类,...,到当前子类，执行属性，方法和构造器，执行完后将其属性和方法压入(堆结构)该实例对象的地址内，往复如此直到把当前子类压入该地址内时，此次实例对象就创建成功了，该地址空间内，从最底部到最顶部依次为 顶级父类的属性和方法 ，一级父类的属性和方法,...,当前父类的属性和方法。当该实例对象使用属性和方法时优先从顶部开始查找，如未找到，则查找指针下移去查找此上一级父类的属性和方法，直到找到为止。此外，每次方法的调用会从当前子类实例对象开始查找，也就是该空间的最顶层开始查找。
   
-  当编写完组件类后，引入该组件实际上是创建了一个该组件类的实例对象，然后react底层会进行一次实例对象的参数补充，它会将props接收的属性，载入到该实例对象的props对象下，将ref属性映射的虚拟dom或组件 载入到指定属性上，同时进行一次页面渲染(初始化，和更新时渲染)，此时组件实例对象一次工作完毕
+  React页面渲染过程
+  	以<Component/>方式引入的组件实例，react底层会创建一个该类的实例对象，并执行一次初始化生命周期函数，最后render生命周期函数返回虚拟dom到引入组件实例的位置；当该组件实例的状态改变后(通过setState({})),react底层会重新执行一次更新时的生命周期函数(包括render)然后把最新的虚拟dom返回到该行
+  React初始化过程
+  	当编写完组件类后，引入该组件实际上是创建了一个该组件类的实例对象，然后react底层会进行一次实例对象的参数补充，它会将props接收的属性，载入到该实例对象的props对象下，将ref属性映射的虚拟dom或组件 载入到指定属性上，同时进行一次页面渲染(初始化，和更新时渲染)，此时组件实例对象一次工作完毕
   
    react 生命周期函数得调用(间接render()重绘页面)方式常见有:
-   	初始化时
+   	初始化时(render())
    	componentDidMount()生命周期函数调用导致其他函数调用setState()时
-   	事件触发，导致其他函数调用setState()时
+   	事件触发，导致其他函数调用setState()时 (setState()会执行更新时生命周期函数)
   */
   ```
-  
+
   
 
++ 技巧
 
+  ```java
+  /*
+  ==================================================
+   // 关于前端路由
+   1. 可以把所有同属性的路由放到一个数组中，并进行export暴露，外部想使用时，引入该路由然后map遍历即可
+  */
+  ```
+
+  
 
 + 集合
 
@@ -97,7 +205,7 @@
    3. 组件分受控组件和非受控组件,使用state来控制重绘的组件就是受控组件，没有使用state的就是非受控组件
    4. react是组件化开发的，也就是说react构建的页面也是基于对象来开发的，通过某个组件实例对象的state改变来完成页面局部更新
    5. 一个组件在其他组件被引用时，被引用组件被称为子组件，主动引用其他组件的组件被称为父组件
-   6. 如果一个组件的内容过于庞大，可以对该组件的局部功能进行拆分(变为该组件的一个子组件)，然后再引入到该组件中计科(增加了可维护性，和复用性)
+   6. 如果一个组件的内容过于庞大，可以对该组件的局部功能进行拆分(变为该组件的一个子组件)，然后再引入到该组件中(增加了可维护性，和复用性)
    ==================================================
    // 关于react diff算法
    1. react使用虚拟diff算法来增加重绘重排效率，且该算法通过每个属性不同的key来完成识别
@@ -115,8 +223,8 @@
    2. import引入其他资源，和java中引入其他类相似，都是把目标的一个映射引入到本文件中
    3. React.Component 在 react 包中 ，ReactDOM.render() 在 react-dom 包中
    4. props 属性可实现 父类向子类通信，ref属性可实现 子类向父类通信
-   5. 在一个组件实例对象生成完毕后，其地址内底层已经隐式挂载了react底层的生命周期函数，当它们调用时，是从该地址顶层开始查找，(因此我们可以重写这些生命周期函数，来完成生命周期函数的过程封装),如果没找到则 寻址指针下移 最终会移动到该地址的底层去调用react底层封装的生命周期函数，找到后调用，寻址指针重新回到该地址顶部，准备下一次属性或方法调用
-   6. react在事件调用时如果想携带参数，可以写为 onClick={(e) => this.removeUserContent(uuid, e)} ,该语句表示，当这个按钮点击时，传入一个函数到react底层，然后react调用传入了一个环境变量，此时通过此调用来完成另一个方法调用
+   5. 在一个组件实例对象生成完毕后，其地址内底层已经隐式挂载了react底层的生命周期函数，当它们调用时，是从该地址顶层开始查找，(因此我们可以重写这些生命周期函数，来完成生命周期函数的过程封装),如果没找到则 寻址指针下移 最终会移动到该地址的底部去调用react底层封装的生命周期函数，找到后调用，寻址指针重新回到该地址顶部，准备下一次属性或方法调用
+   6. react(或js中)在事件调用时如果想携带参数，可以写为 onClick={(e) => this.removeUserContent(uuid, e)} ,该语句表示，当这个按钮点击时，传入一个函数到react底层，然后react调用传入了一个环境变量，此时通过此调用来完成另一个方法调用
    7. 函数也可以返回虚拟dom
   */
   ```
@@ -128,8 +236,8 @@
   ==================================================
   // 关于虚拟dom
    1. 虚拟dom存储在内存中
-   2. jsx中 分 js语句和虚拟dom标签,js语句在虚拟dom标签外可以正常解析,在虚拟dom标签内使用需要加{}，且{}内只能写js表达式(或虚拟dom标签，如果该虚拟标签内还需要解析js表达式则要嵌套{})，(有值在本行得语句就是js表达式，包括变量，有返回值的函数等)
-   3.虚拟dom标签和dom标签语法，结构和功能大致相同，虚拟dom也可以通过css来改变样式，标签包裹的内容默认当字符串处理，标签行内的内容默认当属性处理，唯一不同点是虚拟dom可以使用js表达式而真实dom不行，如果在虚拟dom标签中的某个位置需要使用js语句，则需要使用{}包裹(在被包裹的内容中只能写js表达式，在虚拟dom内的注释也需要使用{}包裹)
+   2. jsx中 分 js语句和虚拟dom标签,js语句在虚拟dom标签外可以正常解析,在虚拟dom标签内使用需要加{}，且{}内的语句必须是js表达式(或虚拟dom标签，如果该虚拟标签内还需要解析js表达式则要嵌套{})，(有值在本行得语句就是js表达式，包括变量，有返回值的函数等)
+   3.虚拟dom标签和dom标签语法，结构和功能大致相同，虚拟dom也可以通过css来改变样式，标签包裹的内容默认当字符串处理，标签行内的内容默认当属性处理，唯一不同点是虚拟dom可以使用js表达式而真实dom不行，如果在虚拟dom标签中的某个位置需要使用js语句，则需要使用{}包裹(在被包裹的内容中也可以写虚拟dom，如果该虚拟dom也需要使用js表达式，则继续需要使用{}包裹，在虚拟dom内的注释也需要使用{}包裹)
    4. 虚拟DOM绑定事件和原生绑定事件基本一致，不过虚拟DOM绑定事件采用小驼峰命名，且通常写在行内
    5.为了简化开发，使用js渲染的虚拟dom如果超过5行则可以单独开一个属性方法，然后由改属性方法会返回虚拟dom(属性指向一个函数，react无法自定方法，因为react底层干煸了方法的this指向)
   ==================================================
@@ -141,7 +249,7 @@
   // 关于state
    1. setState只会改变当前组件实例对象的状态，因此只会对此组件的局部进行重绘(diffs,即单个组件状态改变，之后导致页面局部更新)
    2.使用 this.setState()方法能重新渲染页面，底层使用了观察者模式？(state)属性只能对单个表达式的指向产生修改 所以不能重新渲染页面
-   3. 每次引用组件就是创建了该组件的实例对象，,react底层调用的就是该实例对象的 render方法，然后把虚拟dom作为返回值返回到该行
+   3. 每次引用组件就是创建了该组件的实例对象，,react底层经过生命周期函数的轮询调用，最终会去调用该实例对象的 render方法，然后把虚拟dom作为返回值返回到该行(引用该组件的位置)
    4. 在 webstorm中 不要选择 Change setState() signature 选项 ，否则state属性无法使用
   
    ==================================================
@@ -172,7 +280,7 @@
    ==================================================
   // 关于diff算法 (百度查看源码)
   	1. 创建虚拟DOM树是 使用了文档碎片技术
-  	2. 每一个虚拟dom都会被react赋予一个唯一的不冲突的key值(不包括js表达式生成的虚拟dom标签，js生成的标签需要自定义key属性)，然后react通过该key值给每一个虚拟dom标签生成对应一个文档碎片，最后组成一颗虚拟dom树，并进行页面初始化渲染，当状态改变时，会去检查虚拟dom树结构和每一个文档碎片的前后数据，前后一致的文档碎片不做处理，前后不一致的文档碎片和虚拟dom树内容，则会进行内容替换或更新，并重新渲染页面，即局部更新
+  	2. 每一个虚拟dom都会被react赋予一个唯一的不冲突的key值(不包括js表达式生成的虚拟dom标签，js生成的标签需要自定义key属性(如map遍历出来的虚拟dom标签需要自己指定key))，然后react通过该key值给每一个虚拟dom标签生成对应一个文档碎片，最后组成一颗虚拟dom树，并进行页面初始化渲染，当状态改变时，会去检查虚拟dom树结构和每一个文档碎片的前后数据，前后一致的文档碎片不做处理，前后不一致的文档碎片和虚拟dom树内容，则会进行内容替换或更新，并重新渲染页面，即局部更新
   	3. 在进行diff算法时，只会进行文档碎片的内容比较，而非标签比较，在替换时，也是替换标签内有差异的部分
   	
    ==================================================
@@ -182,15 +290,26 @@
   	3. 在react脚手架中，css和图片资源当作 "模块" 引入，且这些资源默认为 默认暴露
   	4. 在idnex.js页面渲染时,可以直接获取public下的index.html里的标签(React内部完成链接,文件夹不能更改)
   	5. 成型的第三方库或者包需要放在public目录下(如 bootstrap.css)，由index.html引入
+  	6. react v5.0.0 后不再支持本地安装的create-react-app(本地有则需要卸载),而要使用npx 进行临时安装(npm 6版本的产物) 语法: npx create-react-app 项目名 ,如 : npx create-react-app app
+  	
   	
    ==================================================
+  // 关于前端路由
+  1.Route再路由匹配时，会从上到下对所有的前端路由进行匹配，渲染满足要求的路由，因此需要使用Switch(老版本5.2.0以前)或Routes(新版本5.2.0以后)约束
+  2. (老版本5.2.0以前)应该把经常匹配的路由(或多级路由)放到最前面(因为是模糊匹配)，(新版本5.2.0以后)则不需要(因为是精准匹配)
+  3. 再一个前端路由匹配后，浏览器可以对此路由展示的内容进行收藏，下次从可以收藏中获取该路由
+  4. 在进行多级前端路由匹配后，可能导致第三方库在public目录下的index.html中丢失问题，此时可能是你设置的是相对路径，改成绝对路径或使用HshRouter即可 , 如 %PUBLIC_URL%/xxx 或者 /xxx (此方式会自动补全绝对路径)
+  5. 在路由匹配中，是路由去匹配地址，且前端路由需和地址的首部的某个片段完整匹配(在 v.5.2.0以前,模糊匹配)，在v6.0以后则是精准匹配，前端路由需和地址的全部片段完整匹配
+  6. 每次前端路由切换时，会卸载掉前一个展示的路由组件实例对象
+   ==================================================
   // 其他
-  	1. render返回的虚拟dom最终会由react底层渲染到界面上(期间还会进行diff算法差异比较)
+  	1. render返回的虚拟dom最终会由react底层渲染到其引用的位置上，最终会由index.js挂载到public下的html页面上(期间还会进行diff算法差异比较)
   	2. 再引入一个组件类时，如果没有指定组件名，则react会默认引入该组件下的index.jsx 文件
       3. 再引入一个组件类时，如果是jsx或js文件,则后缀可以不写
+      
   */
   ```
-
+  
 + 规范
 
   ```java
@@ -199,13 +318,14 @@
   // 关于虚拟dom
    1. 为了使多级虚拟dom标签为一个整体，通常使用()进行包裹
    2. 在react中 虚拟dom标签的 class 属性 必须写为 className
-   3. 虚拟dom标签写样式时，必须使用{{}}包裹，且样式必须写为键值对格式(对象形式)
-   4. 函数也可以以返回值得方式返回虚拟dom，利用这个特性可以向类中render()方法的return中载入虚拟dom
+   3. 虚拟dom标签写行内样式时(style)，必须使用写为对象形式(是js表达式)，如{{width:300+"px",height:0}}
+   4. 函数也可以以返回值得方式返回虚拟dom，利用这个特性可以向类中render()方法的return中的合适位置载入虚拟dom，如state渲染时，我们把需要使用state渲染的部分封装成一个属性方法，然后再render() return中的合适位置调用即可
    ==================================================
   // 关于组件
    1. 组件的状态改变只能在该组件中进行改变，如果其他组件想改变此组件的状态，可以向外暴露一个方法，其他组件只用调用该方法即可(迪米特法则)
    2. 组件必须大写字母开头，且文件名必须和组件名一致(借鉴java)
    3. 组件必须写render()方法并返回一个虚拟dom标签，否则其在被引入时，会报错
+   4. 组件分为 一般组件(我们自己引入的组件)，路由组件(前端路由匹配后，由路由底层帮助渲染) ；一般组件放入components目录中，路由组件放入page目录中(且在 react-router-dom v5版本中，底层会往路由组件下挂载history,match和location对象；在react-router-dom v6版本则需要自己获取)
   ==================================================
   // 关于state
    1. state中的复杂数据类型的数据不要直接指向该地址并且修改该地址的数据,而应该先深拷贝(使用JSON下的stringify和parse方法)一个state地址里的数据，然后在对这个新地址进行改变，最后使用 setState()维护新数据 ， 如果不这样做可能导致状态改变但页面不更新(因为有些时候state里的值变化了但是由于地址没有改变可能导致页面不更新)
@@ -222,6 +342,8 @@
    3. 每有一个组件类就会随即给该组件类配置一个文件夹(一般为该组件类名的小写形式)，该文件夹下放入该组件类使用的资源(图片，样式等)
    4. 组件类一般使用jsx文件(即该文件专门用于存储组件类)，App.js,index.js一般为包装文件，即对这些组件进行总和并做处理
    5. 在react中，不要使用a标签 ,且使用window下的confirm方法时，需要写为 window.confirm()
+   ==================================================
+  // 关于前端路由
   ==================================================
   // 其他
    1. 标签的key值需选择唯一不冲突的值(减少页面怪异行为)，此时在状态改变时有效的减少页面重绘重排，大大提高了渲染效率
@@ -236,6 +358,8 @@
   
 
 
+
+## 知识集中点
 
 + 生命周期钩子函数(旧)
 
@@ -328,14 +452,14 @@
           fetch(url) // 向url地址发送fetch请求(异步请求)，并返回一个 fulfill状态的promise实例(存储着请求的结果)
   
               // 得到该请求的结果，如果接收请求的地址不存在，则立刻抛出一个rejected状态的promise实例(其存储着错误信息)
-              .then(response => {
+              .then(response => {  // 查看请求是否成功
                   console.log(response);
                   // 如果接收请求的地址存在则解析其结果并抛出一个fulfill状态的promise实例(存储着响应结果)
                   return response.json();
               })
-              // 拿到该请求的结果。如果没有返回数据(未匹配到路由)则立刻抛出一个 rejected状态的promise实例(存储着错误信息)
+              // 拿到该请求的结果。如果匹配路由异常(未匹配到路由)则立刻抛出一个 rejected状态的promise实例(存储着错误信息)
               // 如果有返回数据，则继续执行该函数
-              .then(data => {
+              .then(data => {  // 查看响应是否成功
                   console.log(data);
                   this.changeStateByFetch(data);
   
@@ -377,7 +501,7 @@
           PubSub.subscribe("test", (_, data) => { // _ 进行占位
               console.log(data);
               data("world");
-          });
+          }); 
       	}
       
       	// 发布者
@@ -386,14 +510,539 @@
           PubSub.publish("test",this.testPubSub);
       	}
    
+  4.简单的消息订阅与发布
+  	class PubSub {
+          public static subscribe(str: string, data:(string,any)=>void): void {
+              this.pool[str] = data;
+          }
+  
+          public static publish(str: string, data: any): void {
+          	if(this.pool[str]){
+              	this.pool[str](str,data);
+          	}
+          }
+          private static pool:any= {};
+      }
+  
+      PubSub.subscribe("test",(_,data)=>{
+          if(typeof data ==="function"){
+              data();
+          }
+          console.log(data);
+      })
+      PubSub.publish("test","hello");
+      PubSub.publish("test",()=>{
+          console.log("your can invoke me");
+      });
+   
    	注意
    		订阅者需要先指定端口(变量方式)进行订阅，然后发布者才能向该端口(变量方式)发送数据,前后顺序不能颠	    倒,否则此时发布者的信息没有订阅者进行监听，从而导致数据丢失
    		发布者每次向订阅者发送一个数据时，订阅者就会被调用一次(pubsub底层完成调用)
    		PubSub的订阅与发布机制是全局都有效的，因此可以完成跨组件通信
    		PubSub机制和网络通信原理类似，每次发布者向指定端口发布请求，监听该端口的订阅者方法就会被调用拿到		 本次发布者发送的数据
+  
   */
   ```
   
+
+
+
++ 路由
+
+  ```java
+  /*
+   前端路由 vs 后端路由
+   	前端路由
+   		响应由前端决定
+   		路由是模糊(或精准v6以后)匹配
+   	后端路由
+   		响应由后端决定
+   		路由是精准匹配
+   
+   浏览器存储页签机制(双栈结构)
+   	浏览器的双栈机制可以细化为 回退栈，前进栈
+   	使用栈结构来存储网页路由
+   		回退栈
+   			点击一个不产生新页的页签时,页面显示新内容，且会把上一个路由地址压入回退栈顶,当点击回退时从			后退栈顶拿一个路由地址进行显示，且将上一个内容压入前进栈栈顶
+   		前进栈
+   			在点击回退后,从后退栈栈顶拿出一个路由进行显示，前一个展示的页面会被压入前进栈栈顶,当点击前			进时,从该栈顶拿一个路由地址进行显示，前一个展示的页面会被压入后退栈栈顶
+   	注意
+   		已经加载过的路由在回退或前进时，不会重新加载，因为该栈会记录该路由访问的文件
+   		当栈顶没有路由时，则无法点击(chrome浏览器长按 前进或后退可以选择路由进行进入)
+   
+   
+   前端路由
+   	前言
+   		react-route-dom v6特性参考:https://blog.csdn.net/WAIXINGHAIKE/article/details/123672472 
+  	安装前端路由依赖
+   		npm i react-router-dom
+   	
+   	注意
+   		Link组件最终呈现到html页面中时，是以a标签方式载入的 href为前端路由跳转
+   		React实现浏览器相关操作使用到了history库
+   		
+   	获取路由属性
+   		v5以及以前版本
+   			使用一个路由组件后,该组件下的props属性下router底层会自动挂载history,location和match对象
+   				history对象下常用属性或方法
+   					goBack() // 相当于点击后退按钮
+   					goForward() // 相当于点击前进按钮
+   					push("url") // 执行push操作，将该路由压入栈顶
+   					replace("url") // 执行替换栈顶路由操作
+   				location对象下常用属性或方法
+   					pathname //拿到当前前端路由的路径
+   				match对象下常用属性或方法
+   					params // 该属性存储着前端路由的params参数
+   					params 参数的使用
+   						多用于从数据库中获取数据,并进行前端展示,为了页面看起来有跳转玩的一个帽子戏法
+   					注意
+   						params参数和后端路由的params方式一致,匹配指定前缀的任意路由，并挂载到params						 对象参数下，key为占位的参数，value为匹配到的路径。
+   							如  <Route path="/home/:id" component={HomeMsg}/>//匹配/home/任意
+   								<Link to="/home/123">getMsg</Link> // 此时点击此Link会先去匹配								   Route中的/home/123 路由，如果没有则会去匹配前端参数路由，最终									会参数路由匹配的路由挂载到该组件的params对象参数下，key为:后的								   字符串 value为匹配的路径，如上例会挂载为 {id:123} 
+   				
+              
+   		
+   		
+   	多级路由匹配
+   		v6前多级路由匹配写法
+   			// 匹配路径需要当前前端路由路径相同
+   			render() {
+                      return(
+                          <div>i am a items
+                              <ul>
+                                  <li><Link to={"/items/msg"}>msg</Link></li>
+                                  <li><Link to={"/items/news"}>news</Link></li>
+                              </ul>
+                              <Switch>
+                                  <Route path={"/items/msg"} component={ItemsMsg}/>
+                                  <Route path={"/items/news"} component={ItemsNews}/>
+                              </Switch>
+                          </div>
+                      );
+                  }
+           
+   		注意
+   			 多级路由匹配时，多级路由的路由前缀必须继承前级路由的地址，否则路由会失效
+   				如 一级前端路由为 /index ，二级前端路由必为 /index/e ,三级前端路由必为 /index/e/w
+      	
+      	v6后多级路由匹配写法
+      		// 父路由组件中写法 ,如果有子路由需要在其后加 /*
+      		<Routes>
+                      <Route path={"/move/by/*"} element={<MoveBy/>}/>
+                      <Route path={"/target"} element={<Target/>}/>
+                      <Route path={"/move"} element={<Move/>}/>
+                      <Route path={"/"} element={<Redirect to={"/move"}/>}/>
+              </Routes>
+      		
+      		// 子路由组件中写法,Link写全当前前端路由路径，Route匹配时，只需匹配当前新增的前端路由路径
+      		render() {
+                  return(
+                      <div>
+                          <h2> i am a moveBy</h2>
+                          <ul>
+                              <li><Link to={"/move/by/swift"}>swift</Link></li>
+                              <li><Link to={"/move/by/toggle"}>toggle</Link></li>
+                              <Routes>
+                                  <Route path={"/swift"} element={<Swift/>}/>
+                                  <Route path={"/toggle"} element={<Toggle/>}/>
+                              </Routes>
+                          </ul>
+                      </div>
+  
+                  );
+              }
+      
+      
+   	常用组件(再react-router-dom中的)
+   		HashRouter
+   			前言
+   				HashRouter是H5提出的新路由，当使用HashRouter后，前端路由前会出现/#/进行间隔
+   			使用
+   				root.render(
+                      <HashRouter>
+                          <App/>
+                      </HashRouter>
+                  	);
+   			url状态
+   				http://localhost:3001/#/move
+   		
+   		BrowserRouter
+   			注意
+   				使用前端路由必须使用BrowserRouter或hashRouter进行包裹，可直接包裹再index.js中，避免				多次引入
+   			使用
+   				root.render(
+                      <BrowserRouter>
+                          <App/>
+                      </BrowserRouter>
+              	);
+              	
+   		Link 
+   			作用
+   				再该Link组件被点击后,会再当前url地址中加入特殊的前端路由(由to属性的内容决定),当url地				 址改变后Route组件会进行该前端路由的比对，如果找到了对应的前端路由则把该组件进行渲染，				   否则不做处理
+   				
+   			参数
+   				replace|| replace = {true} 
+   					可以设置前端路由为replace状态(replace指在进行路由点击操作时，每次替换栈顶的路					  由，默认为push 指保留每次路由点击操作，可以回退到上一个路由)
+   			使用
+   				<Link to="/target">点击</Link> //点击后再url地址中添加该前端路由,如果该路由再Route			  组件中匹配成功则进行该路由的渲染,如果没有匹配则不做处理(只是url地址中添加了该前端路由)
+   			注意
+   				设置的前端路由后，再没经过特殊处理，可以使用浏览器的回退和前进功能进行路由穿梭	
+   				当此标签被点击后，会重写前端路由地址为你当前to属性指定的地址
+   					如 to属性为  "/touch" ,而当前显示为 /home/work,当被点击后路由会变为 "/touch"
+          
+   		NavLink 
+   			和Link作用类似，当它被点击后有特殊的高亮效果(由背景颜色决定)
+   			使用
+   				<NavLink to="/move" className={"demo"}>动作</NavLink
+   			注意
+   				使用此组件挂载样式时，如果样式渲染异常，尝试提高样式的优先级即可解决(!important)	
+   				再 react-router-dom 6.0版本前使用activeClassName={"demo"} 方式设置高亮，以后只需要			  className={"demo"} 即可设置高亮
+   		
+   		Routes
+   			前言	
+   				react-router-dom 5.2版本以后使用路由需要此组件进行包裹，完全替代了Switch(继承了				  Switch的功能，并作出了优化)
+   			使用
+   				<Routes>
+                          <Route path={"/target"} element={<Target/>}/>
+                          <Route path={"/move"} element={<Move/>}/>
+                          <Route path={"/"} element={<RootPage/>}/>
+                   </Routes>
+               
+               属性
+               	exact 
+               		在5.2.0版本以前默认模糊匹配，因此如果想要某个路由精准匹配可以在其路由行内添加exact
+   			
+   		Route
+   			作用
+   				用于前端路由匹配,当匹配到对应的Route组件后,将其component(或element)属性下的组件渲染				 到该组件中
+   			兼容问题
+   				再 react-router-dom 5.2版本以前写法
+   					<Route path={"/index"} component={Index}/>
+                  	 <Route path={"/items"} component={Items}/>
+   				再 react-router-dom 5.2版本以后写法(需要Routes组件包裹)
+                      <Routes>
+                      	// 如果此时前端路由为/target 则匹配此路由，渲染 <Target/> 组件
+                          <Route path={"/target"} element={<Target/>}/> 
+                          // 如果此时前端路由为/move 则匹配此路由，渲染 <Move/> 组件
+                          <Route path={"/move"} element={<Move/>}/>
+                      </Routes>                                   
+          
+          Switch
+          	前言
+          		Route再路由匹配时，会从上到下对所有的前端路由进行匹配，渲染满足要求的路由(模糊匹配),即				 可能会同时匹配多个路由。因此需要使用Switch做限制
+          	作用
+          		再一次路由查找中一旦匹配成功，不会继续向下继续匹配路由
+          	兼容问题
+          		再 react-router-dom 5.2版本以后不支持Switch，转而被Routes替代
+          	使用
+          		<Switch>  // 一次只会匹配一个满足要求的路由
+                      <Route path={"/index"} component={Index}/>
+                      <Route path={"/items"} component={Items}/>
+                      <Route path={"/"} component={RootPage}/>
+                  </Switch>
+                  
+          Redirect
+          	作用
+          		用于页面重定向,在没有前端路由匹配时可以自动调转到重定向页面，多放在路由的末尾，在所有的			 前端路由都没匹配的情况下，做出重定向操作
+          	
+          	兼容问题
+          		Redirect在 v6版本后被移除，需要使用useNavigate来完成重定向
+          	
+          	使用
+          		<Switch>
+                      <Route path={"/index"} component={Index}/>
+                      <Route path={"/items"} component={Items}/>
+                      <Redirect to={"/index"}/> // 都没匹配上时，重定向到index前端路由
+                  </Switch>
+          
+          Navigate
+          	作用
+          		v6新组件，可以完成页面重定向,该组件用于代替Redirect
+          	使用
+          		<Routes>
+                      <Route path={"/move/by/*"} element={<MoveBy/>}/>
+                      <Route path={"/target"} element={<Target/>}/>
+                      <Route path={"/move"} element={<Move/>}/>
+                      // Navigate需要在react-router-dom 中引入
+                      <Route path={"/"} element={<Navigate to={"/move"}/>}/> //重定向到/move
+                  </Routes>
+          
+          Outlet
+          	作用
+          		给直接子路由进行放行(该组件需挂载到父组件中)，此时，在前端路由匹配到此子路由路径时，可			 以顺利渲染到放行处(即Outlet在哪里,其子路由渲染的组件的内容就会出现在哪里),否则不会匹配
+          	使用
+          		export default class Activity extends Component {
+                      render() {
+                          return (
+                              <div>
+                                  <Outlet/> // 其子路由渲染组件的内容会被放到此处
+                                  <h2>activity</h2>
+                                  <li>
+                                      <Link to={"/activity/basketball"}>toBasketball</Link>
+                                  </li>
+                                  <li>
+                                      <Link to={"/activity/football"}>toFootball</Link>
+                                  </li>
+                              </div>
+                          );
+                      }
+                  }
+                  
+          
+                  
+  前端路由兼容问题(版本迭代)
+  	在react-router-dom 5.2.0版本以后不支持 Switch转而被 Routes替代，且Routes功能更强大
+  	Route中不支持component写法，转而写为 element，传入的参数也稍有不同
+  	在react-router-dom 5.2.0版本以前,前端路由为模糊匹配，在以后为精准匹配; 模糊匹配指 前端路由中只要前面有一级路由相等就会匹配，而不是检查后面是否相等，精准匹配指 前端路由指只有全部匹配才能匹配成功
+  */
+  ```
+
+
++ react-router-dom(v6版本)
+
+  ```java
+  /*
+  注意
+   	浏览器移除了WithRouter(因此无法隐式在路由组件挂载)，我们可以引入新增的钩子函数来完成这些功能，有 useParams,useLocation,useSearchParams(使用这些函数时，不能使用类的方式返回，而是需要使用函数的方式)
+   	可以使用<Route path="*" element={<NotFound />} />去匹配任意路由,且 * 优先级最低,可以使用该值完成页面再无路由匹配时的页面显示
+   	当前路由如果有其子路由，必须在其Route下的path方法中以 /* 结尾，表示其有子路由，如果不添加则无法正常显示，使用后，其子路由在Route匹配时，react底层会补齐父类的前端路由路径，自己只用写当前路径路由即可
+   	使用navigate("url") 默认执行push操作，如果想变为replace操作添加配置项即可
+   		如 navigate("url",{replace:true})
+   	v6中路由只有一级路由需要 添加 / 其以后的路由不需要
+  	使用嵌套路由必须指定出口(使用react-router-dom提供的Outlet组件)
+  	v6踢狗的钩子函数可能需要在函数中使用
+  	
+  嵌套路由
+   	前言
+   		v6版本中可以使用嵌套路由来管理路由的关系，但要设置一个出口Outlet组件
+   	使用
+   		// 嵌套路由
+   			<Routes>
+   				<Route path="/" element={<Layout/>}>
+   					<Route path="board" element={<Layout/>}>
+   					<Route path="article" element={<Layout/>}>
+   				</Route>
+   			</Routes>
+   		// 在Layout组件中设置出口
+   			<div>
+   				ayout
+   				<Outlet/> // 需要从 react-router-dom 引入
+   			</div>
+   			
+  钩子函数的使用(以下用到的函数，都需要从react-router-dom进行引入)
+  	useInRouterContext
+  		作用
+  			查看一个组件是否在 react-router-dom 上下文环境中,返回布尔值,如果在则为true，否则为false
+  			
+  	useRoutes
+  		作用
+  			可以创建路由表,useRoutes接收数组生成路由表.根据路由表,动态创建<Routes>和<Route>
+  		注意
+  			使用该属性导出一个配置对象时，需要给有子路由的父路由设置放行(Outlet)，这样才能在前端路由跳			转到该子路由时，顺利匹配该子路由
+  		使用
+  			//路由表配置：src/routes/index.js
+              import About from '../pages/About'
+              import Home from '../pages/Home'
+              import {Navigate} from 'react-router-dom'
+  
+              export default [
+              {
+                  path: "/activity",
+                  element: <Activity/>,
+                  children: [ // 因为activity有子路由，因此需要设置Outlet进行放行，此时才会正确匹配路由
+                      {
+                          path: "basketball",
+                          element: <ActivityBasketball/>
+                      },
+                      {
+                          path: "football",
+                          element: <ActivityFootball/>,
+                          children: [ // 因为 football 有子路由，因此需要设置Outlet放行
+                              {
+                                  path: "item",
+                                  element: <ActivityFootballItem/>
+                              }
+                          ]
+                      }
+                  ],
+              }
+          ]
+  
+              //App.jsx
+              import React from 'react'
+              import {NavLink,useRoutes} from 'react-router-dom'
+              import routes from './routes'
+  
+              export default function App() {
+                  //根据路由表生成对应的路由规则
+                  const element = useRoutes(routes)
+                  return (
+                      <div>
+                          {element} // 注册路由
+                      </div>
+                  )
+              }
+              
+   	useSearchParams
+   		作用
+   			该钩子函数可以拿到前端路由携带的查询字符串参数(query参数)
+   		使用
+   			// 路由跳转
+   			navigate("/about?id=1001")
+   			// 获得 query参数
+   			let [params] = useSearchParams() 
+   			let id = params.get("id"); // 获得查询字符串的id属性的值
+   			
+   	useParams
+   		作用
+   			获得路由携带的params参数
+                   如<Route path="/:id" element={<Ro/>}>，此路由匹配成功后会将params参数以					  {id:xx} 方式挂载到Ro路由组件身上，想获取需要使用 useParams()钩子函数
+           使用
+               //前端地址跳转
+                navigate("about/1111");
+                //获得params参数
+                let params = useParams() // 获取的时一个对象
+                let id = param.id
+       
+      useNavigate 
+       	注意
+       		navigate在页面跳转时，默认执行的是push操作的，如果想执行replace则可以进行配置
+          前言
+          	此钩子函数继承了v5中的history对象的特点，并进行了封装
+          作用
+          	返回一个函数用来实现编程式导航。
+          语法
+          	 let navigate = useNavigate();
+          	navigate(url,{配置项});
+          常见用法
+          	navigate(url); // 跳转至指定url
+          	navigate(1); // 前进一步(相当于点击1次前进按钮)
+          	navigate(-1); // 后退一步(相当于点击1次后退按钮)
+          	navgate(url,{replace:true}) // 访问页面时执行replace覆盖
+          使用
+          	render() {
+          		// 函数当作组件渲染时，react底层会进行一次调用，且携带的行内参数会以对象的形式存					  储，放到该函数的第一个形参上
+                     function Redirect({to}){
+                          let navigate = useNavigate();
+                          useEffect(()=>{
+                              navigate(to);
+                          });
+                          return null;
+                      }
+                      return (
+                          <div className="router-part">
+                              <ul>
+                                  <li><Link to="/target">target</Link></li>
+                                  <li><Link to="/move" }>move</Link></li>
+                                  <li><Link to="/move/by" >MoveBy</Link></li>
+                                  <li><NavLink to="/move" className={"demo"}>move</NavLink></li>
+                              </ul>
+                              <Routes>
+                                  <Route path={"/move/by"} element={<MoveBy/>}/>
+                                  <Route path={"/target"} element={<Target/>}/>
+                                  <Route path={"/move"} element={<Move/>}/>
+                                  
+                                  // 重定向到指定路由
+                                  <Route path={"/"} element={<Redirect to={"/move"}/>}/>
+                              </Routes>
+                          </div>
+                      );
+                  }	
+       
+       useLocation
+       	作用
+       		获取当前 location 信息，对标5.x中的路由组件的location属性
+       	使用
+       		import {useLocation} from 'react-router-dom'
+   
+              export default function Detail() {
+                  const x = useLocation() // 获取location对象
+                // x就是location对象:
+                      {
+                    hash: "",
+                    key: "ah9nv6sz",
+                    pathname: "/login",
+                    search: "?name=zs&age=18",
+                    state: {a: 1, b: 2}
+                  }
+                  return (
+                      <ul>
+                          <li>消息编号：{id}</li>
+                          <li>消息标题：{title}</li>
+                          <li>消息内容：{content}</li>
+                      </ul>
+                  )
+              }
+              
+       useMatch
+       	作用
+       		返回当前匹配信息，对标5.x中的路由组件的match属性。
+       		每次打开一个新路由时，useMatch方法就会调用一次，如果能匹配到当前前端路由则进行匹配，否则不			错处理
+       	使用
+  		   import {useMatch} from"react-router-dom";
+              export default function Login() {
+                const match = useMatch('/login/:x/:y')
+                console.log(match) //输出match对象
+                //入股哦match对象匹配成功，则显示内容如下：
+                  {
+                    params: {x: '1', y: '10'}
+                    pathname: "/LoGin/1/10"  
+                    pathnameBase: "/LoGin/1/10"
+                    pattern: {
+                      path: '/login/:x/:y', 
+                      caseSensitive: false, 
+                      end: false
+                    }
+                  }
+                return (
+                  <div>
+                    <h1>Login</h1>
+                  </div>
+                )
+  }
+  
+       useNavigationType
+          作用
+          	返回当前的导航类型（用户是如何来到当前页面的）。
+          返回值
+          	POP、PUSH、REPLACE。
+          备注
+          	POP是指在浏览器中直接打开了这个路由组件（刷新页面）。
+       
+        useOutlet
+  		作用
+  			用来呈现当前组件中渲染的嵌套路由。
+  		使用
+  		   const result = useOutlet()
+              console.log(result)
+              // 如果嵌套路由没有挂载,则result为null
+              // 如果嵌套路由已经挂载,则展示嵌套的路由对象
+              
+  	 useResolvedPath
+  	 	作用
+  	 		给定一个 URL值，解析其中的：path、search、hash值。
+  		使用
+  			console.log('useResolvedPath',useResolvedPath('/user?id=001&name=tom#qws'))
+   			//输出：{pathname: "/user", search: "?id=001&name=tom", hash: "#qws"}
+  
+     
+      
+          
+  */
+  ```
+
+  
+
+
+
++ antd(ui组件库)
+
+  ```java
+  /*
+   
+  */
+  ```
+
   
 
 

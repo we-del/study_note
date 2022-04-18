@@ -9,6 +9,7 @@
    1. 在数据校验时，前端和后端都要进行校验，前端进行输入校验，后端进行逻辑校验
    2. package.json 里的script对象中 ，test 和 start 属性可以直接使用 npm test & npm start 运行
    3. 如果html页面想引入第三方包 可以引入该包提供的js或css，如果js文件想引入第三方包则直接使用引入语法即可
+   4. 后端可以分为 接口路由(提供数据)，UI路由(用于界面显示，暴露静态资源), 逻辑路由(做数据库逻辑校验)
   */
   ```
   
@@ -343,7 +344,7 @@ bug(交流)处理平台有 ,**禅道**
   webstorm处理文件冲突，当文件存在冲突时，按webstorm引导即可解决冲突
   
   webstorm版本回退
-  	选中指定文件，右键git选择show history即可查看文件的提交记录，选择具体的某次操作点击get即可回退到该状态
+  	选中指定文件，右键git选择show history即可查看文件的提交记录，选择具体的某次操作点击Reset Current..即可回退到该状态
   
   webstorm状态回滚
   	webstorm状态回滚可以回到上一次 update(pull)的一次状态 
@@ -1963,7 +1964,7 @@ server.listen(4000, (err) => { // 向服务端发起监听 请求
   // jquery发送ajax请求完整方式
    $.ajax('http://localhost:3000/ajax_get',{ // 第一个参数也可以省略，可以转移到对象里配置url地址参数
    	method: 'get', // 请求方式
-   	data: {name:'keb',age:20}, // 请求携带数据
+   	data: {name:'keb',age:20}, // 请z'x求携带数据
    	success(result){ // 成功回调
    		console.log(result)
    	},
