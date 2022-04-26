@@ -1,5 +1,56 @@
 #   React
 
++ 概念
+
+  ```java
+  /*
+   高阶函数
+   	定义
+   		如果一个函数接受一个函数作为参数，或者一个函数的返回值是一个函数则这个函数就是一个高阶函数
+   	注意
+   		函数是一个复杂数据类型，有自己的地址，在形参接收一个函数时，实际上是指向其函数地址
+   高阶组件
+   	定义
+   		一个组件类其属性接收的是另一个组件类或其方法返回的是另一个组件类时，这个组件就是高阶组件
+   
+   有状态组件
+   	使用state(setState)属性来重绘界面的就是有状态组件
+   无状态组件
+   	没有使用state(setState)属性来重绘界面的就是无状态组件
+   
+   一般组件
+   	自己引入的组件就是一般组件 , 如 <Component/>
+   路由组件
+   	由路由器渲染的组件为路由组件,如 <Route path="/" eleemnt={<Component/>}>
+   
+   注意
+   	每个复杂数据类型都会被分配一个地址，然后变量去引用它们的地址，在传递时也是将它们的地址进行传递(形参去执行该函数的地址)，没有被引用的复杂数据类型的数据 会被js 给释放掉
+  */
+  ```
+
+  
+
++ 项目描述(面试可能问)
+
+  ```java
+  /*
+   描述 方面
+   	此项目是一个前后台分离(前台负责展示，后台负责给东西(数据))得后台管理得SPA(single page apption 单页面应用)
+  	包括 ....等功能模块
+  	前端使用...等技术 ，如React+Antd+Axios+ES6+Webpack等
+      后端使用...等技术, 如 Node+Express+Mongodb(Mysql)
+      采用 模块化，组件化，工程化模式开发(React特性)
+   
+   接口测试
+   	在写项目前，需先测试每一个接口得返回数据是否正确，以此来完成协调更改
+   	
+   注意
+   	mock.js 可以模拟后端返回得数据完成开发
+  */
+  ```
+
+  ![image-20220419173508761](D:\typora_import_images\typora-user-images\image-20220419173508761.png)
+
 **react讲的是单页面开发,学习如何多页面开发(看文章即可)**
 
 + 特别注意
@@ -12,11 +63,11 @@
    1. 在js中要注意this指向问题，this一般指向其调用者，但js中箭头函数this指向和外层this指向一致，函数的返回值无异常(返回给调用者)， 因此在特殊使用我们可以使用call,apply,bind 去改变函数this的指向
    2. 在js事件调用时，如果需要接收参数来完成功能，就需要使用静态代理模式来解决问题(因为js底层在调用时，接收的需要是一个函数地址，且只会传入一个环境变量参数，因此需要使用静态代理模式帮助完成参数传递)
    	 如：a.onclick = (e)=>{ fun(uuid,e)} // 当点击事件触发后，js底层调用此箭头函数(代理函数)，然后由箭头函数(代理函数)去调用另一个真正需要执行的函数(实现函数传递) 
-   	 
+   3. js中复杂数据类型地址传递，简单数值类型值传递，在 new Array()或new Object()时(js可以简写为 []||{}创建一个地址)就表示在堆区创建了一个地址	 
    ==================================================
    // 关于react	 
    1. react在调用了一个函数没有传递正确的参数时，会阻塞程序运行，且不会提示错误
-   2. react的运转是生命周期函数和事件驱动的，render函数多用于返回虚拟dom到引用该组件实例的位置，componentDidMount多用于启动整个组件的运行(类型于java的main函数),getDerivedStateFromProps 多用于将外部Props数据挂载到状态中，componentDidUpdate 多用于页面在更新后做处理(相当于java中的main) ， 事件多用于来开启 更新生命周期函数流(观察者模式)
+   2. react的运转是生命周期函数和事件驱动的，render函数多用于返回虚拟dom到引用该组件实例的位置，componentDidMount多用于启动整个组件的运行(类型于java的main函数),getDerivedStateFromProps 多用于将外部Props数据挂载到状态中，componentDidUpdate 多用于页面在更新后做处理 ， 事件多用于来开启 更新生命周期函数流(观察者模式)
    3. npm run eject 可以拿到当前react配置的webpack文件(webpack.config.js,我们可以再此基础上做扩展)
    4. react中的样式最终都会统一加载到全局(先由各组件引入然后由app汇总到全局)，因此所有的页面的标签的类名或id不能重名，否则会导致样式串流(可以用子类选择器 #title>li)
    
@@ -39,7 +90,7 @@
            <Route path={"/items"} component={Items}/>
          </Switch> 
          
-   3. 前端路由中，多级路由的显示，需同时出现在一个界面中(如点击一个三级路由，其三，二和一级路由都会出现在此界面)
+   3. 前端路由中，多级路由的显示，需同时出现在一个界面中(如点击一个三级路由，其三(当前子路由)，二(直接父路由)和一级路由(顶级路由)都会出现在此界面；不是有几个/index/xxx 就是几级路由，而是其父子路由关系说成路由层级， 如 设为 /doc/react 为一级路由，/doc/react/detail/app 为二级路由   )
    4. 路由大多都是无状态的？因此推荐函数渲染？
    5. v6版本的钩子函数只能在函数组件中使用
    ==================================================
@@ -47,6 +98,12 @@
    1. 在引入资源时，该资源会被先执行一遍(已经引入的资源在引入时不会在执行，因为其已经加载过)
    2. 文档注释非常重要，每一个函数都应配置一个文档注释
    3. 组件包裹组件可以把被包裹组件当作props参数挂载到包裹组件的props属性上
+   4. 只需一次显示，无需重复渲染得组件推荐些为函数组件(无状态)；需要重复渲染得组件推荐类组件(有状态)
+   5. 因版本node npm 和 yarn 不能同时使用？
+   6. 当执行 <Component/>时，如果该Component是一个类，实际上是创建了一个该类的实例对象(类声明周期钩子轮询render返回虚拟dom到该行)，如果该Component是一个函数，则是调用其函数(函数返回虚拟dom到该行) 
+   7. react中的钩子函数 喜欢用 useXxx命名
+   8. 分别暴露，统一暴露最终都会放到一个对象中，因此可以解构获取，而默认暴露是暴露变量本身，因此只能变量指向获取
+   9. 当箭头函数想返回一行数据的时候最好使用小括号包裹，这样看着像一个整体(返回的如果是一个对象必须包裹)
   */
   ```
   
@@ -58,7 +115,7 @@
   ```java
   /*
   注意
-  	scss 是 sass的一个超集，支持了sass的所有写法，不过再属性编写的时候不同，scss为括号包裹，且每个样式必须以;结尾。而sass是缩进表示包括，每个样式不能以l结尾
+  	scss 是 sass的一个超集，支持了sass的所有写法，不过再属性编写的时候不同，scss为括号包裹，且每个样式必须以;结尾。而sass是缩进表示包括，每个样式不能以;结尾
   	缩进显示层级和{}包裹显示层级效果一致，再当作判断使用时，前一个条件为true是才会进入，为false不进入；再当作包裹层级使用时，默认进入一次
    配置sass
    	react脚手架默认支持sass(已经完成了sass的webpack配置，我们使用只需要下载对应的包即可使用)
@@ -218,7 +275,7 @@
    // 关于组件
    1. 在组件拆分时，把可能在多个页面用到的部分拆分成一个组件(js的模块)，以便在多个页面进行引入，大大增加了其可维护性。如果一个功能在其他页面不可能被引用则不需要拆分
    2. 每引用一个组件就是创建了该组件类的实例对象，然后执行初始化生命周期函数
-   3. 组件分受控组件和非受控组件,使用state来控制重绘的组件就是受控组件，没有使用state的就是非受控组件
+   3. 组件分受控组件和非受控组件,使用state来控制重绘的组件就是受控组件，没有使用state的就是非受控组件，受控组件(改变状态后需要重绘页面)使用类方式编写，非受控组件使用函数编写(不需要重绘页面)
    4. react是组件化开发的，也就是说react构建的页面也是基于对象来开发的，通过某个组件实例对象的state改变来完成页面局部更新
    5. 一个组件在其他组件被引用时，被引用组件被称为子组件，主动引用其他组件的组件被称为父组件
    6. 如果一个组件的内容过于庞大，可以对该组件的局部功能进行拆分(变为该组件的一个子组件)，然后再引入到该组件中(增加了可维护性，和复用性)
@@ -286,7 +343,7 @@
   
    ==================================================
   // 关于生命周期函数
-  1. 生命周期函数为react底层定义的特有函数，它们由react统一来完成调用，我们可以通过对生命周期函数进行重写来完成自己封装生命周期钩子的过程(即react底层会做判断，在对应的生命周期函数调用中，如果我们重写了该生命周期函数则react会帮我们调用，如果某个生命周期钩子我们没有重写，react会依去底层调用其自己的钩子函数)
+  1. 生命周期函数为react底层定义的特有函数，它们由react统一来完成调用，我们可以通过对生命周期函数进行重写来完成自己封装生命周期钩子的过程
   2. 每个组件实例对象继承了这一套生命周期系统，组件间的生命周期过程(函数)互相隔离，即不会影响彼此(当生成A组件实例对象时，是调用A组件实例对象上的初始系列方法)
   3. 当初始化时，按顺序调用 componentWillMount() -> render() -> componentDidMount() 方法
     当更新状态等操作时，按顺序调用为
@@ -316,7 +373,7 @@
   3. 再一个前端路由匹配后，浏览器可以对此路由展示的内容进行收藏，下次从可以收藏中获取该路由
   4. 在进行多级前端路由匹配后，可能导致第三方库在public目录下的index.html中丢失问题，此时可能是你设置的是相对路径，改成绝对路径或使用HshRouter即可 , 如 %PUBLIC_URL%/xxx 或者 /xxx (此方式会自动补全绝对路径)
   5. 在路由匹配中，是路由去匹配地址，且前端路由需和地址的首部的某个片段完整匹配(在 v.5.2.0以前,模糊匹配)，在v6.0以后则是精准匹配，前端路由需和地址的全部片段完整匹配
-  6. 每次前端路由切换时，会卸载掉前一个展示的路由组件实例对象
+  6. 每次前端路由切换时，会卸载掉前一个展示的路由组件实例对象，因此可以在ComponentWillUnmount()钩子函数中关闭流，请求接口等
    ==================================================
   // 其他
   	1. render返回的虚拟dom最终会由react底层渲染到其引用的位置上，最终会由index.js挂载到public下的html页面上(期间还会进行diff算法差异比较)
@@ -369,6 +426,7 @@
    5. 生命周期函数setState()可以更新状态的同时，开启一轮更新生命周期函数的调用，因此state通常被认为是用于页面渲染的属性
    6. 关注点分离原则(软件工程中得一个理念)，即把状态和结果区分开，在返回状态时，就知道这次操作得结果
    7. 在react组件间通信中，能使用props和ref完成的通信则尽量使用它们(迪米特法则，不要将组件的数据过多的暴露给外部)，实在无法完成可以使用 消息订阅与发布 和 redux
+   8. 再jsx文件中只书写组件类，配置项等因写入js文件
   */
   ```
   
@@ -376,6 +434,48 @@
 
 
 ## 知识集中点
+
++ useState使用
+
+  ```java
+  /*
+    介绍
+    	  useState是16.8版本新增的一个钩子函数,它可以再函数组件中操作状态来触发函数的重新调用(重新渲染页面)
+    语法
+    	 let [state,setState] = useState("状态值") // 该钩子函数返回的是一个数组，其第一个位置上的是当前的组件的状态，第二个位置上的是改变状态的函数，当此函数被调用后 此组件(一般是函数)会被重新调用 
+    	
+    使用
+    	 import React, {useState} from "react";
+      import {Card, Input, Form} from "antd";
+  
+      export default () => {
+      	// useState({count:1}) 传入的是一个状态值，该函数返回的是一个数组
+          let [todo, setTodo] = useState({count:1}) ;
+          const handlerClick = ()=>{
+              console.log(this);
+               todo = JSON.parse(JSON.stringify(todo)); // 如果状态是复杂数据类型则需要深拷贝
+              todo.count++;
+              setTodo(todo);
+          }
+          return (
+              <div>
+                  <Card title="todolist">
+                      <div onClick={handlerClick}>
+                          今天天气很 {todo.count}
+                      </div>
+                  </Card>
+              </div>
+          );
+      }
+    注意
+    	使用useState创建的状态如果是复杂数据类型则需要进行深拷贝才能进行页面局部刷新(底层认为地址没有改变则没有变化)
+    	setState可以传入任何参数，但一般传入的是原状态改变后的值，如果传入其他类型的值，可能导致引用错误(如原始状态是一个对象，且做了获取属性 xx.a的操作，但改变为了一个数组后，重新调用该函数，因无法从数组上获得属性而报错)
+    	useState钩子函数多用于函数组件，此时其可以通过时间调用来调用来更改state，以达到重绘页面
+    	此钩子函数的渲染只有在事件触发时才会执行(无生命周期函数驱动)
+  */
+  ```
+
+  
 
 + 生命周期钩子函数(旧)
 
@@ -465,9 +565,9 @@
           let q = "v";
           let s = "stars";
           let url = `https://api.github.com/search/repositoriess?q=${q}&sort=${s}`;
-          fetch(url) // 向url地址发送fetch请求(异步请求)，并返回一个 fulfill状态的promise实例(存储着请求的结果)
+          fetch(url) // 向url地址发送fetch请求(异步请求)，并返回一个 fulfill状态的promise实例(存储着请求的状态)
   
-              // 得到该请求的结果，如果接收请求的地址不存在，则立刻抛出一个rejected状态的promise实例(其存储着错误信息)
+              // 得到该请求的状态，如果接收请求的地址不存在，则立刻抛出一个rejected状态的promise实例(其存储着错误信息)
               .then(response => {  // 查看请求是否成功
                   console.log(response);
                   // 如果接收请求的地址存在则解析其结果并抛出一个fulfill状态的promise实例(存储着响应结果)
@@ -491,9 +591,10 @@
    注意
    	fetch向指定位置发送请求后，会返回一个 fulfill状态的promise实例对象,其中的value为此次请求的状态;当我们使用then方法拿到该结果后,如果地址匹配失败则立刻抛出一个状态为rejected的promise实例(值为报错信息),如果匹配地址成功需要手动返回一个结果(response.json(),js底层会自动将这个结果包装成一个fulfill状态的promise)
    	fetch发送的请求，如果请求的地址不存在则直接抛出一个 rejected状态的promise实例对象(该状态中的值为错误信息);如果存在则抛出一个 fulfill状态的promise实例对象(它的值是本次请求结果)，当我们使用then方法调用时，js底层会对该请求进行解析(检查是否匹配到路由和是否由结果)，如果该路由有返回数据则继续执行本then方法的第一个函数，如果该路由没有返回数据(说明路由匹配失败)，会立刻抛出一个 rejected状态的 promise,里面存储报错信息
+   	fetch把依次状态的请求分成了两个节点，第一次then方法调用是看地址是否存在，第二次then方法调用是看路由是否匹配(是否有返回值)
   */
   ```
-  
+
   
 
 + 组件间通信
@@ -506,7 +607,7 @@
    
    3. 消息订阅与发布
    	原理
-   		订阅者指定端口(变量方式)进行监听,当发布者每次发送数据时,订阅者就会被(PubSub底层)调用从而获得数据
+   		订阅者指定端口(变量方式)进行监听(订阅),当发布者每次发送数据时,订阅者就会被(PubSub底层)调用从而获		  得数据
    
    	使用
    		// 订阅者
@@ -787,7 +888,7 @@
           
           Outlet
           	作用
-          		给直接子路由进行放行(该组件需挂载到父组件中)，此时，在前端路由匹配到此子路由路径时，可			 以顺利渲染到放行处(即Outlet在哪里,其子路由渲染的组件实例对象就会出现在哪里),否则不会匹配
+          		在使用Routes路由嵌套子路由时(使用useRoute解析的就是嵌套路由)，给直接子路由进行放行(该				组件需挂载到父组件中)，此时，在前端路由匹配到此子路由路径时，可以顺利渲染到放行处(即					 Outlet在哪里,其子路由渲染的组件实例对象就会出现在哪里),否则不会匹配
           	使用
           		export default class Activity extends Component {
                       render() {
@@ -841,7 +942,7 @@
    					<Route path="article" element={<Layout/>}>
    				</Route>
    			</Routes>
-   		// 在Layout组件中设置出口
+   		// 在Layout组件中设置出口，此时其直接子路由才能进行匹配，渲染的内容会被放到<Outlet/>位置
    			<div>
    				ayout
    				<Outlet/> // 需要从 react-router-dom 引入
@@ -854,7 +955,7 @@
   			
   	useRoutes
   		作用
-  			可以创建路由表,useRoutes接收数组生成路由表.根据路由表,动态创建<Routes>和<Route>
+  			创建路由表,useRoutes接收数组生成路由表.根据路由表(嵌套路由),动态创建<Routes>和<Route>
   		注意
   			使用该属性导出一个配置对象时，需要给有子路由的父路由设置放行(Outlet)，这样才能在前端路由跳			转到该子路由时，顺利匹配该子路由
   		使用
@@ -867,7 +968,7 @@
               {
                   path: "/activity",
                   element: <Activity/>,
-                  children: [ // 因为activity有子路由，因此需要设置Outlet进行放行，此时才会正确匹配路由
+                  children: [ // 因为 /activity有子路由，因此需要在其对应的组件类中设置Outlet进行放行，此时才会正确匹配路由，匹配到的组件类会被放置到 OUtlet 组件位置
                       {
                           path: "basketball",
                           element: <ActivityBasketball/>
@@ -897,9 +998,22 @@
                   return (
                       <div>
                           {element} // 注册路由
+                          // 转换后的效果为
+                          <Routes>
+                          	// 想要其直接子路由进行匹配须在该路由的组件中使用<Outlet/>组件放行，然后							  其子路由渲染的页面会被放到Outlet组件位置
+                          		如 当访问 /activity 路由渲染 <Activity/> 组件后，如果想要其直接子路							    由能够匹配，因在其<Activity/>内使用<Outlet/>组件，此时表示可以匹配其							  直接子路由，当匹配后，该路由下的组件会渲染到直接父路由组件的<Outlet/>							   组件位置
+                          	<Route path="/activity" element={  <Activity/>}>
+                          		<Route path="basketball" element={ <ActivityBaskectball/>}>
+                          		<Route path="football" element={ <ActivityFootball/>}>
+                          			<Route path="item" element={ <ActivityBaskectballItem/>}>
+                          		</Route>
+                          	</Route>
+                          </Routes>
                       </div>
                   )
               }
+              
+              
               
    	useSearchParams
    		作用
@@ -919,7 +1033,7 @@
                //前端地址跳转
                 navigate("about/1111");
                 //获得params参数
-                let params = useParams() // 获取的时一个对象
+                let params = useParams() // 获取的是一个对象
                 let id = param.id
        
       useNavigate 
@@ -1048,22 +1162,582 @@
           
   */
   ```
-
+  
   
 
 
 
 ## antd解析
 
+**此笔记只做特别的，极难查找的，极其重要的内容，配置项去官网看**
+
++ 踩得坑
+
+  ```java
+  /*
+  1. 密码输入框 需要设置 autoComplete="on" 否则可能出警告
+    <Input.Password autoComplete="on" /> 
+   2. 使用npm 下载 @craco/craco 时，可能报错，尝试使用yarn下载
+   3. 如果自定义主题颜色无法成功修改，检查依赖包是否都下载了(查看package.json)
+  */
+  ```
+
+
++ 使用原则
+
+  ```java
+  /*
+   1. 在其需要的组件中进行修改即可
+  */
+  ```
+
+  
+
 + 集合
 
   ```java
   /*
    1. antd 可以快速搭建一个中后端服务器
+   4. 再拿到antd设置的样式后，我们可以对其样式进一步更改，以满足自己需求(组件也可以设置样式)
+   5. antd把每一个盒子位于外部包含块的位置分成了 24个span,如果全占满说明铺满整个父盒,
+   6. offset 可以向右移动x个span的距离，如 offset ={4} 向右移动了4个span位置
+   7. 再查阅属性的时候 使用 ctrl+f 进行快速查找
+   8. antd设置的组件类大多具有语义化的，Form组件就是一个form表单,Input组件就是一个Input框
+  */
+  ```
+  
++ antd安装及高级设置(按需引入)
+
+  ```java
+  /*
+   参考，https://ant.design/docs/react/use-with-create-react-app-cn
+   注意
+   	import '~antd/dist/antd.less'; 需要在App.js 或Index.js进行引入
+  */
+  ```
+
++ Button组件
+
+  ```java
+  /*
+  配置项(即传入的props属性，该组件会接收并解析，渲染一个满足要求的一个组件实例对象)
+  type属性
+  	primary 设置为主题颜色
+  	warning 黄色
+  	error 红色
+  	
+  
+   注意
+   	该组件得type属性可以设置按钮的类型(即antd约定好的样式)
+  */
+  
+  ```
+  
+
+
+
++ 栅格系统
+
+  ```java
+  /*
+   介绍
+   	antd设置了自己的一套栅格系统，它们把屏幕分成了24个span位
+   	
+   使用
+   	<Row justify="start"> // 设置行
+        <Col span={4}>col-4</Col> // 设置该行每一列占用的 span长度
+        <Col span={4}>col-4</Col>
+        <Col span={4}>col-4</Col>
+        <Col span={4}>col-4</Col>
+      </Row>
+      
+   Row 常用属性
+   	wrap
+   		作用
+   			是否自动换行
+   		使用
+   			wrap = {false}
+   	justify
+   		作用
+   			标签水平排列方式
+   		可选值
+   			start | end | center | space-around | space-between | space-evenly
+   	align
+   		作用
+   			垂直对齐方式
+   		可选值
+   			top | middle | bottom
+   	gutter
+   		作用
+   			栅格间隔(元素间距)，可以写成像素值或支持响应式的对象写法来设置水平间隔 { xs: 8, sm: 16, 			  md: 24}。或者使用数组形式同时设置 [水平间距, 垂直间距]
+   		可选值
+   			number | object | array   默认为0
+   Col 常用属性
+   	order 
+   		作用
+   			改变该组件的显示位置
+   		使用
+   			order={4}
+   	flex
+   		作用
+   			指定Col组件再该行占用的位置
+   	offset
+   		作用
+   			向左间隔 x个span位置
+   	pull
+   		作用
+   			向左移动 x 个span位置
+   	push
+   		作用
+   			向右移动 x 个span位置
+   	span	
+   		作用
+   			占用的栅格数
   */
   ```
 
   
+
++ Form组件
+
+  ```java
+  /*
+  配置项(即传入的props属性，该组件会接收并解析，渲染一个满足要求的一个组件实例对象)
+  	name 
+  		指定当前标签id，Form表单下的组件标签的name会依次进行匹配拼接
+  			如 Form name="basic" ,  Input name = "input"
+  				则它们id分别为 form id="basic" ,  input id="basic_input"
+  	initialValue
+  		指定表单初始值，如果Form指定就以Form为准，其没有指定就以自己的为准
+  	labelCol
+  		设置当前label标签的位置
+  		使用
+  			labelCol={{
+                         span: 7, // 长度
+                    }}
+        rule 
+        	用来给每个表单设置输入校验提示
+        	自定义配置规则
+        		// 每次输入依次内容就会调用依次 validator所指向的函数
+        		 const verifyConfig = (_, value) => {
+        		 if(value === undefined) return Promise.reject(new Error("表单不能为空"));
+                  let reg = /^[a-zA-Z\d_]+$/;
+                  // 想正确的条件很简单，想错误的条件很难想全，因此我们只用列出满足条件的判断，然后取反就是				不满足条件
+                  if(!(value.length >=6 && value.length <=15)) {
+                      return Promise.reject(new Error("长度需大于5位小于16位"));
+                  }
+                  if(! reg.exec(value)) return Promise.reject(new Error("只能输入字母数字或下划线"));
+                  return Promise.resolve();
+              }
+        		 rules={[
+                      {
+                          validator:verifyConfig // 该函数由底层调用(调用时传入两个参数)
+                      },
+                  ]}>
+   注意
+   	form组件实际渲染的是一个form表单
+   	Input 组件的label属性为 表单显示名，name 属性为表单 id
+  */
+  ```
+  
+
+
+
+## redux解析
+
++ 集合
+
+  ```java
+  /*
+   1. redux适合用在复杂项目中的集中状态管理上（如100个组件，其中20各组件需要用到同一个状态）。小型项目可以使用pubsub或context
+   2. redux在初始化和更新时底层会进行一次调用
+   3. 在reducer中 不要去改变原有地址的数据，而是应该重新创建一个地址然后再进行修改
+   4. 只引入redux管理状态时，再更新redux中的状态时不会调用react组件中的render方法重绘，因此需要使用 其对象下的subscribe()方法进行刷新以达到重新渲染的目的（subscribe方法再每次redux的状态改变后会被调用一次），或用redux-react(react推出的关联redux的中间件)
+   5. 使用redux后，状态统一由redux进行集中管理，所有再首次更新redux时，需要给它们赋予初始状态值
+   6. 再使用redux时，因为是使用type来做状态操作区分，而type属性又是一个string类型，因此可以创建一个专门用于保存type的配置文件，这样可以避免失误
+   7. 引入了redux管理的状态后，当其的状态进行更新后，由 react-redux 完成重绘即局部更新
+   8. store对象中保存了redux的所有状态，以对象形式
+  */
+  ```
+
+  
+
++ 常见面试题
+
+  ```java
+  /*
+   redux 结构图
+   redux 的基本编码
+   对redux的理解
+   区别ui组件与容器组件
+   何为高阶组件
+  */
+  ```
+
++ 介绍
+
+  ```java
+  /*
+   redux是一个独立专门用于做状态管理的js库(并非react插件库).它可以用在react,angular,vue等项目中，主要功能为集中式的状态管理工具
+   
+   actionCreators
+   	用于包装dispatch的缓冲层，可以在该层做判断等限制语句
+   store
+   	用于集中管理所有redux状态.再调用此对象的dispatch方法时，该store会去分发给对应的reducer进行状态改变（reducer在进行返回）
+   reducers
+   	用于操作状态并返回给store
+   react Component
+   	最终会去状态的组件类
+   	
+  */
+  ```
+  
+  ![image-20220422165152266](D:\typora_import_images\typora-user-images\image-20220422165152266.png)
+
++ redux中常用方法
+
+  ```java
+  /*
+   dispatch
+   	作用
+   		用来发布改变状态的格式，会去调用对应的reducer处理该对象
+   	使用
+   		store.dispatch({type:"xx",data:"xx"}) // type为一个字符串，data为状态值，可以是任何类型
+   
+   getState
+   	作用
+   		获取当前store管理的状态
+   	使用
+   		store.getState()
+   
+   subscribe
+   	作用
+   		当redux管理的状态更新后，该方法会自动被调用（底层调用）
+   	使用
+   		store.subscribe(()=>{})
+  */
+  ```
+
+  
+
++ react-redux
+
+  ```java
+  /*
+   介绍
+   	react-redux是一个react插件库，用于简化在react中 使用redux
+   
+   react-redux 组件分类
+   	react-redux 将组件分成两类 UI组件和容器组件
+   		UI组件
+   			只负责UI呈现，不带任何业务逻辑
+   			通过其容器盒子props传递参数
+   			不适用任何Redux的api
+   			一般保存在components目录下(在react-redux角度中，路由组件也应该放到该目录)
+   		
+  		容器组件
+          	负责管理数据和业务逻辑，不负责UI呈现
+          	使用redux的api
+          	一般在containers目录下
+   
+   工作流程
+   	使用 import {connect} from "react-redux"; 后，我们可以传入两个函数来获取store管理的状态和追加操作store状态的方法，第一个参数为一个函数，该函数由react-redux底层进行调用，并把store管理的所有状态(store管理的状态是一个对象，我们可以对其进行解构获取需要的全局状态)当作第一个参数传入，第二个参数为一个函数或者对象，当为函数时，会由底层调用并传入 dispatch 当作该函数的第一个参数，当传入对象时，其对象的value必须是一个action函数，然后react-redux会对该函数进行简单代理模式的包装，当此代理函数被调用后，帮助调用dispatch方法改变store里的状态 。（ 以上两个形参如果使用到了函数类型则需要返回一个对象，最终它们会被当作props参数挂载到需要包装的组件类上），此connect返回的是一个函数，我们必须在进行一次函数调用并把需要操作全局状态的组件当作第一个参数传入，最终前一个函数中返回的对象会被解构并挂载到该组件类中进行包装(会被放到props参数下)
+   
+   底层大致调用写法
+   	方式1 传入时
+   	方法名：function(){  // 方式一传入时，react-redux底层会做一个静态代理模式的一个包装，不向外部暴露dispatch
+   		dispatch(actions(...args)); // 可以使用 thunk中间件，当actions(...args)返回的是一个函数时，该thunk中间件就会去调用它，并把dispatch当作参数传递(向外暴露dispatch)，此时我们就可以完成异步封装
+   	}
+   	方式2 传入时
+   	方法名(){ // 方式二传入时，react-redux会把dispatch暴露给我们，此时可以完成异步操作
+   		dispatch(actions(...args));
+   	}
+   
+   使用
+   	// 包装UI组件的两种方式
+   	import {connect} from "react-redux";
+      import IncrementIfOdd from "../component/IncrementIfOdd";
+      import {handlerIncrement, handlerSubtract} from "../action";
+  
+  	// 方式1 ，使用对象传入时，则对象中属性的值必须是一个函数，最终会由底层完成调用然后拿到对象，并由其完成 dispatch({type:"xx",data:"xx"}); 操作（底层使用了静态代理模式，在外层套了一套代理函数，当我们调用这个方法时，底层完成了该操作    如function(){dispatch(handlerIncrement())} ）
+      export default connect(number => ({number}), {
+       	// 把increment和subtract当作方法挂载到指定组件的props下，当被调用时，底层会调用此方法并包装成dispatch(handlerIncrement()) 去操作store对象
+              increment: handlerIncrement, 
+              subtract: handlerSubtract
+          }
+      )
+      (IncrementIfOdd)
+  
+  	// 方式2 ，使用函数传入时，底层调用本函数并传入了dispatch，因此由我们来完成 						dispatch({type:"xx",data:"xx"}); 操作
+      export default connect(number => ({number}), dispatch => ({
+              increment() {
+                  dispatch(handlerIncrement())
+              },
+              subtract() {
+                  dispatch(handlerSubtract())
+              }
+          })
+      )
+      (IncrementIfOdd) // 该函数调用完毕后，返回该包装后的组件类，只有该组件类身上才维护了store全局属性
+  注意
+   	react-redux把组件分为了容器组件和UI组件，由容器组件去拿到store里的数据并包装到对应UI组件上(必须向外暴露此包装的UI组件，在使用其时props上才有操作redux的状态和方法(原UI组件不经过包装没了此redux的状态))
+   	react-redux 提供了一个 Provider 组件，该组件是所有组件的最顶层，把store传递给该组件即可，该组件底层会完成redux的渲染监听(当redux管理的状态改变后，会去重新渲染引用了该状态的组件)
+   	react-redux 加载的 redux中的状态，最终 会以 props参数挂载到 指定的组件上，且调用该方法传入参数后，会由其底层传递到acitons函数的形参中，并由其完成dispatch(actions(..args))状态改变(如果采用方式一则底层dispatch，如果使用的是方式二则我们自己封装了dispatch的过程)
+   	只有经过react-redux包装过并向外暴露的组件类，其props属性中才有react-redux挂载的redux全局状态和操作方法 
+  */
+  ```
+
+  
+
++ redux工作机制
+
+  ```java
+  /*
+  原理
+   	在使用 createStore(reducer); 创建了一个store对象并指定了reducer函数后(该函数第一个形参为State,第二个形参为action)，一个redux集中状态管理器就诞生了(其在初始化和状态更新时，会调用该reducer来维护一次store的状态),当其他组件类引入了这个store，并使用其方法dispatch({type:"x",data:"x"})后,该store会去把该对象交给对应的reducer处理(根据type属性的值，调用对应的reducer)，该reducer处理完毕后将改变后的状态又返回给store对象统一管理(此时sotre下的subscribe方法会被底层调用一次)，一次store的状态管理就结束了
+   进阶
+   	可以创建一个action.js文件对在提交状态更改前做一个缓冲层处理,然后将对应的对象返回
+   注意
+   	可以使用 store.getState()获取其管理的状态
+   	reducer(state,aciton) 中第一个形参的state第一次由自己手动设置初始化状态(redux初始化会调用),在之后的调用中，store仓库会传入对应的state和action
+   实现
+   =========================
+   //store
+   import {createStore} from "redux";
+   import reducer from "./reducer";
+   export default createStore(reducer);
+   
+   =========================
+   //reducer
+   import {SUBTRACT, INCREMENT} from "./typeConfig"
+   export default function reducer(state = 0, action) {
+      let {type, data} = action;
+      let newState = null;
+      switch (type) {
+          case INCREMENT:
+              newState = state + data;
+              return newState;
+          case SUBTRACT:
+              newState = state - data;
+              return newState;
+          default:
+              return state;
+      }
+   }
+   =========================
+   //action
+   import {INCREMENT, SUBTRACT} from "./typeConfig";
+   export const handlerIncrement = () => ({type: INCREMENT, data: 1});
+   export const handlerSubtract = () => ({type: SUBTRACT, data: 1});
+   
+    =========================
+   //computer
+  import React, {Component} from "react";
+  import Increment from "./Increment";
+  import IncrementIfOdd from "./IncrementIfOdd";
+  import Subtract from "./Subtract";
+  import store from "../store";
+  
+  export default class Computer extends Component {
+     
+      render() {
+  
+          return (
+              <div>当前的数是:{store.getState()}
+                  <Increment store = {store}/>
+                  <IncrementIfOdd store = {store}/>
+                  <Subtract store = {store}/>
+              </div>);
+      }
+  }
+  =========================
+   //Increment
+  import React, {Component} from "react";
+  import {handlerIncrement} from "../action";
+  
+  export default class Increment extends Component {
+      handlerClick = () => {
+          let {store} = this.props;
+          store.dispatch(handlerIncrement());
+      }
+  
+      render() {
+          return (<button onClick={this.handlerClick}>+</button>);
+      }
+  }
+  =========================
+   //IncrementIfOdd
+  import React, {Component} from "react";
+  import {handlerIncrement} from "../action";
+  export default class IncrementIfOdd extends Component {
+      handlerClick = () => {
+  
+          console.log(this);
+          let {store} = this.props;
+          console.log(handlerIncrement());
+          if (Math.abs(store.getState() % 2) === 1) {
+              store.dispatch({type: "increment", data: 1});
+          }
+      }
+  
+      render() {
+          return (<button onClick={this.handlerClick}>increment if odd</button>);
+      }
+  }
+  
+  =========================
+   //Subtract
+  import React, {Component} from "react";
+  import {handlerSubtract} from "../action";
+  
+  export default class Subtract extends Component {
+  
+      handlerClick = () => {
+          console.log(this);
+          let {store} = this.props;
+          console.log(store);
+          store.dispatch(handlerSubtract());
+      }
+  
+      render() {
+  
+          return (<button onClick={this.handlerClick}>-</button>);
+      }
+  
+  }
+  */
+  ```
+
+
+
+
++ redux异步编程
+
+  ```java
+  /*
+   注意
+   	react-redux 使用方式一不能完成异步编程，需要使用中间件来进行调停(redux-thunk),因为完成异步编程主要是用到了dispatch，而方式一挂载到props上的redux状态，我们获取不到dispatch所以需要中间件(方式二可以获取)
+   	此方式适用于方式一引入完成redux状态得props挂载，当react-redux代理函数调用此函数得到一个函数返回值后，引入的中间件就监听到了此函数，调用它并传入了 dispatch 来帮助完成异步调用
+   安装
+   	npm i redux-thunk
+   作用
+   	当 dispatch()接收的是一个函数时，此时该中间件会去调用该函数，并把dispatch作为第一个形参传递，此时就可以利用dispatch来完成异步编程等操作
+   	在使用方式一传入状态时。我们无法获取和操作dispatch所以无法完成异步操作，而此中间件可以把react-redux内部封装的dispatch暴露出来，当作参数去调用我们的函数，来帮助我们完成异步操作
+  
+  工作流程
+  	当调用了一个操作store全局状态的方法后，react-redux底层调用我们的actions函数(如果是一个对象则react-redux底层会直接dispatch({type:"xx",data:xx})进行调用)，并对其返回值做判断，如果是一个对象则其会继续进行store状态的更改操作(如 dispatch(actions()))，如果是一个函数，且使用了redux-thunk中间件，则此时该函数会被调用并把dispatch当作第一个参数传入,此时我们自定义的函数就完成了调用，我们可以按照需求完成异步操作
+   	
+    使用(thunk中间件完成异步编程)
+    	// store
+    	import {createStore,applyMiddleware} from "redux";
+      import reducer from "./reducer";
+      import thunk from "redux-thunk"; // 引入异步编程中间件
+      export default createStore(reducer,applyMiddleware(thunk)); // 使用该中间件，此时就可以在action中返回一个函数，该函数会被此中间件调用并把 dispatch传入，完成异步操作(此方式适合方式一传参，符合设计原则(单一职责原则))
+     
+     // action
+     export const asyncIncrement = () => ((dispatch) => {
+      // 此方式适用于方式1引入，当代理函数调用此函数后，得到一个函数类型的返回值，此时会被 thunk中间件监听，调用此函数并传入了 dispatch，来帮助完成异步操作(如果返回的是一个对象则直接由react-redux完成操作)
+      setTimeout(() => (dispatch({type: INCREMENT, data: 1})), 1000)
+  	});
+  
+   
+    使用 挂载方式2完成异步编程 (此方法不需要用到thunk中间件)
+    import {connect} from "react-redux";
+    import AsyncSubtract from "../component/AsyncSubtract";
+    import {SUBTRACT} from "../typeConfig";
+    
+    export default connect(number => ({number}), dispatch => ({
+        asynSubtract() {
+        		// 方式2，我们可以拿到dispatch 因此无需用到thunk也能完成异步操作，不过不符合设计原则(单一职责原则)
+                setTimeout(() => {
+                    dispatch({type: SUBTRACT, data: 1})
+                }, 1000);
+        }
+    }))(AsyncSubtract);
+  
+  */
+  ```
+
+  
+
++ 浏览器激活redux开发工具
+
+  ```java
+  /*
+   前言
+   	redux开发工具可以灵活的查看redux管理的状态，下载插件 Redux DevTool 和进行相关代码配置即可激活
+   	
+   下载包
+   	npm i redux-devtools-extension
+   
+   使用
+   	import {createStore,applyMiddleware} from "redux";
+      import reducer from "./reducer";
+      import thunk from "redux-thunk"; // 引入异步编程中间件
+      import {composeWithDevTools} from "redux-devtools-extension"; // 引入开发工具启动装置
+      // 进行使用composeWithDevTools()为开发工具调用，如果想使用中间件则在里面传入形参
+      export default createStore(reducer,composeWithDevTools(applyMiddleware(thunk)));
+  
+  */
+  ```
+
+  
+
++ 使用redux管理多个reducer(管理多个状态)
+
+  ```java
+  /*
+   作用
+   	总和所有reducer的状态到store对象中
+  
+   使用
+  =============================================
+  	// index.js  用于汇总所有的reducer
+   	import count from "./count";
+      import personData from "./personData";
+      import {combineReducers} from "redux"; // 用于总和多个reducer的状态
+      export default combineReducers({ // 把reducer的所有状态暴露出去，最终由store引入
+          count, personData
+      });
+  =============================================
+  	// count.js  count状态的reducer,用于操作此状态的更改
+  	
+      import {SUBTRACT, INCREMENT} from "../typeConfig"
+      export default function count(state = 0, action) {
+          let {type, data} = action;
+          let newState = null;
+          switch (type) {
+              case INCREMENT:
+                  newState = state + data;
+                  return newState;
+              case SUBTRACT:
+                  newState = state - data;
+                  return newState;
+              default:
+                  return state;
+          }
+      }
+  
+  
+  =============================================
+  	// personData.js  personData状态的reducer,用于操作此状态的更改
+      export default function personData(state = [], action) {
+         return state;
+      }
+      
+  =============================================
+  	// store.js  用于管理所有的全局状态
+      import {createStore,applyMiddleware} from "redux";
+      import thunk from "redux-thunk"; // 引入异步编程中间件
+      import {composeWithDevTools} from "redux-devtools-extension";
+      import reducers from "./reducers";
+      export default createStore(reducers,composeWithDevTools(applyMiddleware(thunk)));
+  */
+  ```
+
+  
+
+
 
 ## 前言
 
