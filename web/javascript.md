@@ -11,6 +11,17 @@
   3. js设置 css3样式时(transform等)，需要使用字符串包裹，否则会当作函数解析
   	如 img.style.transform = "scale(1, 1)";
   4. 解构赋值可以对 对象和实例对象进行解构
+  5. js中对象里的key直接写时默认当字符串处理
+  	如 obj={a:2} ;obj.a = 1 ; // 以上的a会被当作字符串处理，
+  	如果想要其当作js表达式处理就需要使用[]包裹，如下
+  		let d = "ddd"
+          let obj = { a: 2, b: 3, [d]: 5 };
+          let c = "we";
+          obj[c] = 4;
+  
+  6. string类型转number类型的方式
+  	使用 ParseInt() ， 入 parseInt("2")+1 === 3 true
+  	使用 *1  , 如  "1" * 1  === 1 true
   */
   ```
 
@@ -2426,38 +2437,24 @@ ES5(09年发布) ES6(ES2015) ES7(ES2016)
     
     3.实现深拷贝
     普通数据类型值传递，复杂数据类型地址传递，所以再遍历到复杂数据类型时，需要使用递归来复制里面的每个值
-      let checkDataType = data => Object.prototype.toString.apply(data).slice(8, -1);
-      function clone(target) {
-        let result;
-        let targetType = checkDataType(target);
-        if (targetType === 'Array') {
-          console.log('数组', target)
-          result = [];
+          // 深克隆
+      function clone(obj) {
+        if (!(obj instanceof Object)) return obj;
+        let tmp = null;
+        if (obj instanceof Array) {
+          tmp = [];
+        } else {
+          tmp = {};
         }
-        else if (targetType === 'Object') result = {};
-        else return target;
-        for (let item in target) {
-          let value = target[item]
-          if (checkDataType(target[item]) === 'Object' || 'Array') {
-            result[item] = clone(value);
-          } else {
-            result[item] = value;
-          }
+        for (let i in obj) {
+          if (obj[i] instanceof Object) tmp[i] = clone(obj[i]);
+          else tmp[i] = obj[i];
         }
-        return result;
+        return tmp;
       }
-      let arr = [1, 2, { a: 1, b: 2 }];
-      let arr1 = clone(arr);
-      arr1[arr1.length] = 3;
-      arr1[2].a = 'name';
-      console.log(arr1, arr)
-      let obj = { name: '1', age: 14, sex: ['男', '女'] }
-      let obj1 = clone(obj);
-      obj.sex[0] = 'female'
-      console.log(obj, obj1)
   */
   ```
-
+  
 + es7
 
   ```js

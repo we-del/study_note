@@ -625,8 +625,8 @@ bug(交流)处理平台有 ,**禅道**
     window.addEventListener('storage',()=>{})
     
    注意
-   	session存储按域名来隔离，即相同域名(端口或地址)g用一个session存储
-   	localStorage存储实际上是存储的一
+   	前端数据存储(session,local,cookie)存储按域名来相互隔离，即相同域名(端口或地址)共用一个session存储，不同域名之间的前端数据相互隔离
+   	localStorage存储实际上是存储的一个键值对
   */
   ```
 
@@ -2502,6 +2502,7 @@ server.listen(4000, (err) => { // 向服务端发起监听 请求
 注意
 	await 必须写在async函数中 ，但async函数可以不写await
 	async 函数返回的是一个promise实例对象(默认为成功的回调，如果想抛出一个失败的回调使用 throw或者 Error),当返回除了 throw或Error时默认都会包装成一个成功的回调；我们也可以返回一个promise实例对象，此时该async函数的返回值就是该promise
+	await 关键字实际上是做了一个 then()操作，且会await关键字其后的代码会全部封装到微队列执行
 
  1. async 函数
  函数的返回值为promise对象，promise对象结果由async函数执行的返回值决定

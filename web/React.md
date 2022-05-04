@@ -1,9 +1,195 @@
 #   React
 
++ js代码执行顺序
+
+  ```java
+  /*
+   认识
+      js中 为单线程运行，因此其把任务分为同步任务(简单任务，复杂任务)，异步任务(异步任务又分宏任务，微任务)
+   名词解释
+   	同步任务
+   		在调用或运行时可以直接运行(简单任务就是同步任务)
+   	异步任务
+   		需所有同步任务执行完后，异步任务才能执行(宏任务和微任务就为异步任务)
+   	简单任务
+   		同步任务的一种，一类可以直接执行的任务，如，参数定义，函数调用（函数回调属于同步任务，不管是否被包裹）
+   	复杂任务
+   		同步任务的一种，一类需要触发才能执行的任务，如 函数调用
+   	宏任务
+   		异步任务的一种，如定时器,ajax回调
+   	微任务
+   		异步执行的一种，如promise的函数调用(then方法,catch方法)，await 关键字后的语句都会当作微任务，相当于嵌套了一个then
+   		
+   所有任务的执行顺序
+   	同步任务 > 微任务 > 宏任务
+   
+   js执行规则
+   	简单任务直接执行;复杂任务读取到堆中，等待调用执行;微任务进入微队列，等待当前上下文中(当前上下文指，如果此时在全局执行代码则当前上下指的就是全局，如果在函数中执行，则当前上下文指的就是当前函数)所有简单任务队列执行完毕后开始执行;宏任务进入宏队列，等待当前上下文所有简单任务队列和微队列执行完毕后开始执行
+   
+   注意
+   	简单任务直接执行，复杂任务则进入堆中等待调用执行，宏任务和微任务则进入对应的队列，等待执行，待所有简单任务执行完后，在执行微队列里的内容，然后执行宏队列里的内容
+   	在执行复杂任务，宏任务和微任务里的内容时，还会对该上下文内容的进行任务类型的划分，依然遵守执行规则,如此微任务或宏任务中，又包简单任务，含宏任务或微任务，则在进入对应的队列等待执行，直到全部任务执行完毕
+   	return 默认会当作简单任务执行不管其被什么东西进行包装
+   	使用了await关键字的代码和其后的代码底层会使用then包裹(升级为微任务)，而return为同步执行(简单任务)，因此无法返回promise成功的回调，而是返回的promise对象，如下代码，因此await不应和return同时使用，否则返回的结果可能达不到预期
+          export const loginReq = async (username: string, password: string) => {
+          setTimeout(async() => {
+              console.log(1); // 同步执行
+              
+              // 其后的代码在底层被then包裹(不包括return.return)
+              //当简单任务执行完毕后，执行此任务
+              let res = await axios.post(HOST + PORT + LOGIN, {username, password});
+              console.log(res);
+              console.log("www");
+              setTimeout(() => {
+  
+                  console.log("wo"); // 当当前上下文所有的简单任务和复杂任务执行完毕后执行宏任务
+                  return res;  // 本意想返回primise成功的回调，但return因为是同步执行，await来不及获取成功的回调，此时res同步执行的结果为fulfill状态的promise，因此返回的就是这个状态
+              }, 1000)
+          }, 100);
+      };
+   	
+   
+   调用示例
+   	// 此函数是一个经典的await then调用
+   	export const loginReq = async (username: string, password: string) => {
+          console.log(1); // 同步执行
+           // 使用了 await关键字 ，其后的代码会被包装成 微任务进行微任务队列等待执行(待执行到该任务后又对这些任务进行在分配，如下为一个定时器，会被放到宏任务队列)，如果同步任务return依赖到这个res变量，则直接返回一个同步的res （一个promise对象）
+          let res = await axios.post(HOST + PORT + LOGIN, {username, password});
+          console.log(res);
+          console.log("www"); 
+          setTimeout(()=>{
+              console.log("wo");
+              return res; // 同步任务， 拿到 axios.post回调的值，直接返回 因此为一个promise对象
+          },1000)
+      };
+      
+      // promise 调用示例
+      执行顺序   
+      	1-3行为宏任务进入宏队预执行，并等待其他任务执行完毕在开始执行
+      	5-7行为简单任务直接执行 ，输出 1
+      	8-17行为其第一个微任务，进入微任务队列等待执行
+      	21-23行为一个简单任务，直接执行，输出 7
+      	24-26行为一个微任务，进入微任务队列等待执行
+      	此时所有的简单任务都已经执行完毕，开始执行微任务队列里的任务
+          =================
+      	执行8-17里的微任务，对其任务内容再次进行划分
+      	9-12行为简单任务直接执行，输出 2，3
+      	13-14行为微任务，在进入微任务队列排队
+      	================
+      	此时8-17行的then已经执行完毕
+      	18-20行为外部promise的第二个then调用，进入微队列等待执行
+      	================
+      	所有任务都已经进入队列里，开始执行宏队列和微队列(微队列全部执行完毕才执行宏队列)内容(所有执行小于1ms执行完毕)
+      	执行24-26行的微任务调用，并对其进行任务拆分，此时为一个简单任务，输出 5
+      	执行13-12行的微任务调用，并对其进行任务拆分，此时为一个简单任务，输出 4
+      	15-17行为一个微任务，进入微任务队列等待调用
+      	执行18-20行的微任务调用，并对其进行任务拆分，此时为一个简单任务，输出 6
+      	执行15-17行微任务调用，并对其进行任务拆分，此时为一个简单任务，输出 5
+      	=====================
+      	此时所有微任务执行完毕，开始执行宏任务队列内容
+      	执行1-3行的宏任务调用，并对其进行任务拆分，此时为一个简单任务，输出 0
+    1  setTimeout(() => { // 宏任务 
+    2    console.log("0"); 
+    3  })
+    4  //  1 7 2 3 8 4 6 5 0
+    5  new Promise((resolve, reject) => {  //  简单任务 
+    6    console.log("1"); //  简单任务  
+    7    resolve();
+    8  }).then(() => { // 微任务
+    9    console.log("2");  // 简单任务
+    10    new Promise((resolve, reject) => {  //  简单任务
+    11      console.log("3"); // 简单任务 
+    12      resolve();
+    13    }).then(() => { // 微任务
+    14      console.log("4");  
+    15    }).then(() => { // 微任务
+    16      console.log("5"); // 简单任务
+    17    });
+    18  }).then(()=>{//微任务(在第一次扫描上下文时,因为其还需要依赖前一个then的返回值所以不会被放到微队列)
+    19    console.log("6"); // 简单任务
+    20  });
+    21 new Promise((resolve, reject) => { // 简单任务
+    22   console.log("7"); // 简单任务 
+    23    resolve();
+    24  }).then(() => { // 微任务
+    25    console.log("8"); // 简单任务 
+    26  });
+  */
+  ```
+
+  
+
++ react编写tsx
+
+  ```java
+  /*
+  ts中接口的使用
+        export interface LoginStateLimit {
+          loginState:number,
+          loginToken:string,
+          entry():void,
+      }
+      // 普通对象可以把接口当作对象的key和类型约束，且必须实现接口里的所有属性和方法
+      const initialState:LoginStateLimit = {
+          loginState: -1,
+          loginToken:""，
+          entry(): void {
+      	}
+      }
+      // 类需要实现接口里的所有属性和方法
+      class Login implements LoginStateLimit{
+         public loginToken:string = "";
+         public loginState:number = -1;
+         entry(): void {
+     		}
+      }
+   注意
+   	使用tsx编写程序时，必须要写返回值，和数据类型，否则可能编译报错
+   	react默认不支持tsx，如果需要使用，则需在创建项目时添加如下
+   		npx create-react-app 项目文件名 --template typescript
+  	ts无法引入识别图片资源，需要在 项目 src目录下 创建 image.d.ts 文件，并写入如下内容
+  	    declare module '*.svg'
+          declare module '*.png'
+          declare module '*.jpg'
+          declare module '*.jpeg'
+          declare module '*.gif'
+          declare module '*.bmp'
+          declare module '*.tiff'
+          declare module '*.pdf'
+  */
+  ```
+
+  
+
 + 概念
 
   ```java
   /*
+   纯函数
+   	定义
+   		一个函数的返回结果只依赖于它的参数，并且在执行过程里面没有副作用(即增加值的不确定性)，我们就把这个函数叫做纯函数,即返回值是我们可以预测到的，只依赖其函数内部的参数的函数是纯函数(相同代码相同传参在同一时间多次调用的返回值相同)
+   	实例
+   		// 纯函数，返回值可以预测到的
+   		const a = 1
+          const foo = (obj, b) => {
+            return obj.x + b
+          }
+          const counter = { x: 1 }
+          foo(counter, 2) // => 3
+          counter.x // => 1
+          
+          // 不纯函数，返回值无法预测，内部更改了数据
+          const a = 1
+          const foo = (obj, b) => {
+            obj.x = 2
+            return obj.x + b
+          }
+          const counter = { x: 1 }
+          foo(counter, 2) // => 4
+          counter.x // => 2
+          
+   	注意
+   		不能调用Date.now()或Math.random()等返回值不固定的函数
    高阶函数
    	定义
    		如果一个函数接受一个函数作为参数，或者一个函数的返回值是一个函数则这个函数就是一个高阶函数
@@ -22,6 +208,7 @@
    	自己引入的组件就是一般组件 , 如 <Component/>
    路由组件
    	由路由器渲染的组件为路由组件,如 <Route path="/" eleemnt={<Component/>}>
+   
    
    注意
    	每个复杂数据类型都会被分配一个地址，然后变量去引用它们的地址，在传递时也是将它们的地址进行传递(形参去执行该函数的地址)，没有被引用的复杂数据类型的数据 会被js 给释放掉
@@ -93,6 +280,29 @@
    3. 前端路由中，多级路由的显示，需同时出现在一个界面中(如点击一个三级路由，其三(当前子路由)，二(直接父路由)和一级路由(顶级路由)都会出现在此界面；不是有几个/index/xxx 就是几级路由，而是其父子路由关系说成路由层级， 如 设为 /doc/react 为一级路由，/doc/react/detail/app 为二级路由   )
    4. 路由大多都是无状态的？因此推荐函数渲染？
    5. v6版本的钩子函数只能在函数组件中使用
+   
+   ==================================================
+   // 组件选择 
+   1. 新版本react更推荐使用函数组件(因为占用体积小，且拥有类的大部分重要功能，如 state,props,ref,生命周期) ,类组件占用体积大，功能更庞大，如果只需满足常用需求使用函数组件即可，如果有额外需求使用类组件即可
+   2、类组件  以 <Component/> 载入到虚拟dom中时，react底层创建了一个实例对象
+   3. 函数组件 以 <Component/> 载入到虚拟dom中时，react底层实际上是调用了这个组件函数，创建了一个单独的函数实例(当以 fn1()调用时只是单独的一次调用)
+   4. 类组件 以 <Component  name={"张三"}/> 传递的参数会被放到该实例对象的props属性下，以<Component>张三</Component> 接收的参数会被放到 该实例对象下的props属性下的children属性下；
+   	函数组件 以 <Component  name={"张三"}/> 传递的参数会被放到该实例函数组件的第一个参数上(为一个对象，key value为传入的组件参数)，以<Component>张三</Component> 接收的参数会被放到 该实例函数组件的第一个参数下的children属性下 
+   5. 创建类组件实例 就相当于一次把所有类组件相关配置集成到了一个实例对象中，而创建函数组件可以把自己需要的组件相关配置进行引入，来达到一个按需引入目的(所以函数组件比类组件在日常使用中更具有优势)
+   
+    ==================================================
+   // axios请求发送
+   	1. axios发送post请求后台可能无法正常接收，进行一下配置代码即可正常接收
+   	
+  
+      import {HOST, PORT, LOGIN} from "../../../config";
+      import Qs from "qs";
+      // 设置post请求头消息
+  	axios.defaults.headers.post["Content-Type"]="application/x-www-form-urlencoded";
+      export const loginReq = async (username: string, password: string) => axios.post(HOST + PORT + LOGIN, Qs.stringify({ // 传输的数据使用Qs模块进行转换
+          username,
+          password
+      }));
    ==================================================
    // 其他
    1. 在引入资源时，该资源会被先执行一遍(已经引入的资源在引入时不会在执行，因为其已经加载过)
@@ -104,6 +314,11 @@
    7. react中的钩子函数 喜欢用 useXxx命名
    8. 分别暴露，统一暴露最终都会放到一个对象中，因此可以解构获取，而默认暴露是暴露变量本身，因此只能变量指向获取
    9. 当箭头函数想返回一行数据的时候最好使用小括号包裹，这样看着像一个整体(返回的如果是一个对象必须包裹)
+   10. 扩展运算符 ... ,本质是展开运算符，可以将一个数组或对象的最外层进行展开，依此法可以放到另外一个数组或对象中(对象展开后是一个键值对，在控制台无法输出，因此只能放到一个对象中，，可以直接使用或放到数组中)，实现浅拷贝(只对最外层实现拷贝),如果想实现深拷贝则需要使用 JSON.parse(JSON.stringify())或对每层的数组或对象进行展开
+   11. instanceof 的作用：判断一个实例对象的地址中是否是否包含该类的一个构造部分(也就是继承)，即判断一个实例对象是否由该类构建 ，如 (Function instanceof Object true),Objcet是所有引用类型的基类 
+   12. 解构赋值原则：读取值可以进行解构，写值(修改数据)不应该进行解构(，因为在解构后，简单数据类型是值传递，修改后不会作用子原对象或数组上，只有复杂数据类型的解构才会影响原地址(因为是地址传递))
+   13. 已经开启的定时器，在没有关闭的情况下，只有其执行完毕了才会自行取消，因此因即使关闭没有使用的定时器，避免内存浪费
+   14. 解决跨域的方式有 ,jsonp,cors,前端代理(再package.json中 添加 "proxy":"url")
   */
   ```
   
@@ -427,6 +642,8 @@
    6. 关注点分离原则(软件工程中得一个理念)，即把状态和结果区分开，在返回状态时，就知道这次操作得结果
    7. 在react组件间通信中，能使用props和ref完成的通信则尽量使用它们(迪米特法则，不要将组件的数据过多的暴露给外部)，实在无法完成可以使用 消息订阅与发布 和 redux
    8. 再jsx文件中只书写组件类，配置项等因写入js文件
+   9. 一个react文件的引入顺序为，第三方库，本地组件，样式，图片
+   10. 在 ts编写react时，组件类写为 tsx,其他文件写为ts
   */
   ```
   
@@ -435,43 +652,18 @@
 
 ## 知识集中点
 
-+ useState使用
++ 前端代理
 
   ```java
   /*
-    介绍
-    	  useState是16.8版本新增的一个钩子函数,它可以再函数组件中操作状态来触发函数的重新调用(重新渲染页面)
-    语法
-    	 let [state,setState] = useState("状态值") // 该钩子函数返回的是一个数组，其第一个位置上的是当前的组件的状态，第二个位置上的是改变状态的函数，当此函数被调用后 此组件(一般是函数)会被重新调用 
-    	
-    使用
-    	 import React, {useState} from "react";
-      import {Card, Input, Form} from "antd";
-  
-      export default () => {
-      	// useState({count:1}) 传入的是一个状态值，该函数返回的是一个数组
-          let [todo, setTodo] = useState({count:1}) ;
-          const handlerClick = ()=>{
-              console.log(this);
-               todo = JSON.parse(JSON.stringify(todo)); // 如果状态是复杂数据类型则需要深拷贝
-              todo.count++;
-              setTodo(todo);
-          }
-          return (
-              <div>
-                  <Card title="todolist">
-                      <div onClick={handlerClick}>
-                          今天天气很 {todo.count}
-                      </div>
-                  </Card>
-              </div>
-          );
-      }
-    注意
-    	使用useState创建的状态如果是复杂数据类型则需要进行深拷贝才能进行页面局部刷新(底层认为地址没有改变则没有变化)
-    	setState可以传入任何参数，但一般传入的是原状态改变后的值，如果传入其他类型的值，可能导致引用错误(如原始状态是一个对象，且做了获取属性 xx.a的操作，但改变为了一个数组后，重新调用该函数，因无法从数组上获得属性而报错)
-    	useState钩子函数多用于函数组件，此时其可以通过时间调用来调用来更改state，以达到重绘页面
-    	此钩子函数的渲染只有在事件触发时才会执行(无生命周期函数驱动)
+   介绍
+   	当后端不配合我们使用 jsonp,cors解决跨域时，前端的一个解决跨域的方法
+   作用
+   	帮助转发请求
+   配置方法
+   	再package.json中添加 "proxy":"url"
+   工作过程
+   	会先在当前端口下查找是否可以解决，解决不了会由代理转发请求，去另一个端口下查找解决
   */
   ```
 
@@ -499,7 +691,7 @@
    	当一个组件做了状态更改操作时，如果调用的是 setState() ,则react会去调用 shouldComponentUpdate() -> componentWillUpdate() -> render() 方法 ;如果调用的是 forceUpdate() 则 react会按顺序调用 componentWillUpdate() -> render()
   */
   ```
-  
+
   ![image-20220406195601900](D:\typora_import_images\typora-user-images\image-20220406195601900.png)
 
 
@@ -601,6 +793,8 @@
 
   ```java
   /*
+  注意
+  	包括 props,ref,context,PubSub,red
    1. props 可以实现 父向子通信 
    
    2. ref 可以实现 子向父通信
@@ -664,7 +858,7 @@
   ```
   
 
-
+## 路由
 
 + 路由
 
@@ -930,6 +1124,7 @@
    	v6中路由只有一级路由需要 添加 / 其以后的路由不需要
   	使用嵌套路由必须指定出口(使用react-router-dom提供的Outlet组件)
   	v6踢狗的钩子函数可能需要在函数中使用
+  	在路由嵌套中，当匹配到了一级路由后，在其一级路由组件中设置Outlet组件出口，二级路由才能够匹配，且二级路由组件会被渲染到一级路由组件的Outlet位置，在其二级路由组件中设置Oulet组件出口，三级路由才能够匹配，且三级路由组件会被渲染到二级路由组建的Outlet位置 ...(往复如此，后级路由需要前级路由组件设置Outlet组件放行才能够匹配，且其后继路由组件会被渲染到前级路由组件的Outlet位置)
   	
   嵌套路由
    	前言
@@ -1315,7 +1510,7 @@
   			labelCol={{
                          span: 7, // 长度
                     }}
-        rule 
+        rules 
         	用来给每个表单设置输入校验提示
         	自定义配置规则
         		// 每次输入依次内容就会调用依次 validator所指向的函数
@@ -1357,11 +1552,30 @@
    6. 再使用redux时，因为是使用type来做状态操作区分，而type属性又是一个string类型，因此可以创建一个专门用于保存type的配置文件，这样可以避免失误
    7. 引入了redux管理的状态后，当其的状态进行更新后，由 react-redux 完成重绘即局部更新
    8. store对象中保存了redux的所有状态，以对象形式
+   9. react-redux 的connect方法是一个经典的闭包，当我们传入两个函数后（第二个参数可以是一个对象，最终会由其底层做一个静态代理），其内部进行调用，并对此函数返回的对象进行解构进行保存，此connect会返回一个函数，并且这个函数接收的需要是一个组件类，当传入后，第一个函数保存的对象会被以props参数传递到该组件类身上进行包装，并返回一个包装类到该行，此时使用 export default 暴露即可(暴露的是被传入props全局状态的组件类)
+   	大致实现
+   		function connect(fn1,fn2) {
+            let obj1 = fn1(store.state);
+            let obj2 = null;
+            if (fn2 instanceof Function) {
+              obj2 = fn2(store.dispatch);
+            } else {
+              for(let i  in fn2){
+                obj[i] = function () {
+                  store.dispatch(fn2[i](...args));
+                }
+              }
+            }
+            return function (Component) {
+              Component.props = { ...obj1，...obj2  };
+              return Component;
+            }
+          }
   */
   ```
-
   
-
+  
+  
 + 常见面试题
 
   ```java
@@ -1480,10 +1694,11 @@
       )
       (IncrementIfOdd) // 该函数调用完毕后，返回该包装后的组件类，只有该组件类身上才维护了store全局属性
   注意
-   	react-redux把组件分为了容器组件和UI组件，由容器组件去拿到store里的数据并包装到对应UI组件上(必须向外暴露此包装的UI组件，在使用其时props上才有操作redux的状态和方法(原UI组件不经过包装没了此redux的状态))
+   	react-redux把组件分为了容器组件和UI组件，由容器组件去拿到store里的数据并包装到对应UI组件上(必须向外暴露此包装后的组件，在使用其时props上才有操作redux的状态和方法(原UI组件不经过包装没了此redux的状态))，在开发中通常此包装过程和ui路由写在一起，然后暴露包装后的组件类，然后此组件被称为容器组件
    	react-redux 提供了一个 Provider 组件，该组件是所有组件的最顶层，把store传递给该组件即可，该组件底层会完成redux的渲染监听(当redux管理的状态改变后，会去重新渲染引用了该状态的组件)
    	react-redux 加载的 redux中的状态，最终 会以 props参数挂载到 指定的组件上，且调用该方法传入参数后，会由其底层传递到acitons函数的形参中，并由其完成dispatch(actions(..args))状态改变(如果采用方式一则底层dispatch，如果使用的是方式二则我们自己封装了dispatch的过程)
    	只有经过react-redux包装过并向外暴露的组件类，其props属性中才有react-redux挂载的redux全局状态和操作方法 
+   	
   */
   ```
 
@@ -1738,6 +1953,712 @@
   
 
 
+
+
+
++ redux-toolkit使用
+
+  ```java
+  /*
+   介绍
+   	redux-toolkit 是一个redux的一个强大的辅助工具，帮助集成了redux繁琐的写法，是对redux的一个上层封装
+   安装
+   	npm i redux-toolkit
+   注意
+   	slice在编写为reducers后，其底层会创建对应的actions，因此我们可以直接导出actions和reducers,在我们使用 dispatch(actions)调用这些actions后，其会去调用对应的reducer
+   	在reducer中，我们无法获取原state,而是获取的一个代理(该代理存储着原状态的映射)
+   	当想对state的状态进行修改时，如果是改变该状态的指向就必须返回state(如 原状态为简单数据类型，当改变其后需要返回新的状态，如原状态指向一个引用数据类型时，如果想改变引用则必须返回新状态),否则不需要返回(往对象或数组里添加数据，因为此时是地址引用，所以不需要返回数据)
+   	
+   常用api	
+   	createSlice
+   		用来指定一个切边，该切片包含，name,initialState,reducers字段，并总和了actions和reducers
+   	configureStore
+   		像从Redux中创建原始的createStore一样创建一个Redux store实例，但接受一个命名的选项对象并自动设	  置Redux DevTools扩展
+   		
+   基本使用
+   	// store
+   	import {configureStore} from "@reduxjs/toolkit";
+      import counterSlice from "./counterSlice";
+      export default configureStore({
+          reducer:{
+              counter:counterSlice,
+          }
+      });
+      
+   =====================================
+      // slice  
+  
+      import {createSlice, createAsyncThunk} from "@reduxjs/toolkit";
+  
+      export const counter = createSlice({
+          name: "counter",
+          initialState: {value: 0},
+          reducers: {
+              increment(state) {
+                  state.value += 1;
+              },
+              decrement(state) {
+                  state.value -= 1;
+              },
+              asyncAdd(state, {payload}) {
+                  state.value += payload;
+              }
+          },
+  
+  
+      });
+  
+      export default counter.reducer;
+      export const {increment, decrement, asyncAdd} = counter.actions;
+      export const asyncIncrement = (payload: any):any => (
+          (dispatch: any) => {
+              console.log("async被调用");
+              setTimeout(() => {
+                  dispatch(asyncAdd(payload));
+              }, 2000);
+          }
+      )
+     ===================================
+     // 使用状态
+     // useDispatch钩子函数可以得到该store里的dsipatch方法，然后将slice中抽离出来的actions进行传入即可调用对应的reducer的方法改变状态
+     // useSelector钩子函数可以得到当前store管理的全部状态
+      import {useDispatch, useSelector} from "react-redux";
+      import {increment, decrement,asyncIncrement} from "./counterSlice";
+  
+      export default () => {
+          let count = useSelector((state: any) => {
+              console.log(state);
+              return state.counter.value;
+          });
+          let dispatch = useDispatch();
+          return (
+              <>
+                  <h2>当前为：{count}</h2>
+                  <button onClick={(): void => {
+                      dispatch(increment())
+                  }}>+1
+                  </button>
+                  <button onClick={(): void => {
+                      dispatch(decrement())
+                  }}>-1
+                  </button>
+                  <button onClick={(): void => {
+                      console.log("异步+");
+                      dispatch(asyncIncrement(Math.random()*5))
+  
+                  }}>异步+1
+                  </button>
+              </>
+          );
+      }
+     
+  */
+  ```
+
+
+
++ react-toolkit 异步action
+
+  ```java
+  /*
+  介绍
+  	异步action使用 createAsyncThunk 函数创建，它的返回的是一个promise对象，在其调用后，根据返回值Promise状态不同调用对应extraReducers的Promise状态
+  	
+  注意
+  	当外部使用 dispatch(loadMoviesAPI())时，就是调用的extraReducers里loadMoviesAPI对应的Promise状态
+  	使用react-toolkit发送请求后，可以直接将发送请求部分写在 Slice文件里
+  	异步action多用于封装含有promise的回调，如果你的返回值是一个promise就交给createAsyncThunk处理吧
+  	
+  使用
+   	import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+      // createAsyncThunk创建一个异步的action，这个方法被触发的时候会有三个状态
+      // pending(进行中) fulfilled(成功) rejected(失败)
+  
+      import { increment } from './counterSlice';
+  
+      // 发起网络请求获取数据
+      const loadMoviesAPI = () =>
+       fetch(
+       'https://pcw-api.iqiyi.com/search/recommend/list?channel_id=1&data_type=1&mode=11&page_id=2&ret_num=48'
+        ).then((res) => res.json());
+  
+      // 这个action是可以直接调用的，用来处理异步操作获取数据
+      export const loadData = createAsyncThunk('movie/loadData', async () => {
+       const res = await loadMoviesAPI();
+       return res; // 此处的返回结果会在 .fulfilled中作为payload的值
+      });
+  
+      export const movieSLice = createSlice({
+       name: 'movie',
+       initialState: {
+       list: [],
+       totals: 0,
+        },
+       reducers: {
+       loadDataEnd(state, { payload }) {
+       state.list = payload;
+       state.totals = payload.length;
+          },
+        },
+       // 可以额外的触发其他slice中的数据关联改变
+       extraReducers: {
+          [loadData.fulfilled](state, { payload }) {
+           console.log(payload);
+           state.list = payload.data.list;
+          },
+          [loadData.rejected](state, err) {
+           console.log(err);
+          },
+          [loadData.pending](state) {
+           console.log('进行中');
+          },
+        },
+      });
+      export const { loadDataEnd } = movieSLice.actions;
+      export default movieSLice.reducer;
+  
+  */
+  ```
+
+
++ 使用fetch异步action发请求（redux-toolkit）
+
+  ```java
+  
+  // sendRes.tsx
+  import {useSelector, useDispatch} from "react-redux";
+  import {clear, fetchSend, SendReqInitState, ResponseLimit} from "../redux/sendReqSlice";
+  import {Button, Card, Input, Row, Col, Spin} from "antd";
+  import {LoadingOutlined} from '@ant-design/icons';
+  
+  export default () => {
+  
+      let resMsg: SendReqInitState = useSelector(({resMsg}: any) => resMsg);
+      const dispatch = useDispatch();
+      
+      /**
+       @description: 获取数据时响应
+       */
+      const getRes = () => {
+          console.log("我来展示数据");
+          console.log(resMsg.resArr);
+          return (
+              <Row justify={"start"}>
+                  {
+                      resMsg.resArr.map((data: ResponseLimit): any => (
+                              <Col key={data.id} >
+                                  <a href={data.url}>
+                                      <img src={data.avatar}/>
+                                      {data.name}
+                                  </a>
+                              </Col>
+                          )
+                      )
+                  }
+              </Row>
+          );
+      }
+  
+      /**
+       @description: 加载时 响应
+       */
+      const lodingRes = () => {
+          console.log(resMsg);
+          const antIcon = <LoadingOutlined style={{fontSize: 24}} spin/>;
+          return (
+              <Spin indicator={antIcon}>加载中</Spin>
+          );
+      }
+      
+      const {isLoad, awaitSearch} = resMsg;
+  
+      /**
+       @description: 获取搜索数据，并渲染
+       */
+      const sendSearchReq = (value: string) => {
+          initSearch();
+          dispatch(fetchSend(value));
+      }
+      /**
+       @description: 初始化数据
+       */
+      const initSearch = () => {
+          dispatch(clear());
+      }
+  
+      return (
+          <>
+              <Card title={
+                  <Input placeholder={"请输入搜索内容"} onPressEnter={(e: any) => {
+                      sendSearchReq(e.target.value);
+                  }}/>
+              } extra={<Button type={"primary"}>查询</Button>}>
+                  {awaitSearch ? <h2>请输入查询内容</h2> : (isLoad ? lodingRes() : getRes())}
+              </Card>
+          </>
+      );
+  }
+  
+  // ===========================
+  // store
+  import {configureStore} from "@reduxjs/toolkit";
+  import todoReducer from "./todolistSlice";
+  import asyncReducer from "./asyncModeSlice";
+  import sendReqReducer from "./sendReqSlice";
+  export default configureStore({
+      reducer: {
+          todo: todoReducer,
+          async: asyncReducer,
+          resMsg: sendReqReducer
+      }
+  })
+  // ===========================
+  // sendResSlice
+  import {createSlice,createAsyncThunk} from "@reduxjs/toolkit";
+  export interface ResponseLimit {
+      name:string,
+      url:string,
+      avatar:string,
+      id:number
+  }
+  export interface SendReqInitState {
+      isLoad:boolean,
+      awaitSearch:boolean,
+      resArr:ResponseLimit[]
+  }
+  const initialState:SendReqInitState = {
+      isLoad :false,
+      resArr:[],
+      awaitSearch:true
+  };
+  
+  /**
+   @description: 创建一个异步action,并向外暴露，当调用此异步函数后（Dispatch(fetchSend())），extraReducers中的对应promise状态就会调用
+   */
+  export const  fetchSend:any = createAsyncThunk("sendReq/fetchSend",async(payload:any)=>{
+      const s: string = "stars";
+      const url: string = `https://api.github.com/search/repositories?q=${payload}&sort=${s}`;
+      return await fetch(url).then(res => res.json());
+  })
+  export const sendReq = createSlice({
+      name:"sendReq",
+      initialState,
+      reducers:{
+          clear(state){
+              state.isLoad = true;
+              state.awaitSearch = false;
+              state.resArr = [];
+          }
+      },
+      extraReducers:{
+          [fetchSend.fulfilled](state:any,action:any){
+              const {items} = action.payload;
+              items.forEach((obj:any)=>{
+                  let tmpArr:ResponseLimit = {
+                      name:obj.name,
+                      url: obj.html_url,
+                      avatar: obj.owner.avatar_url,
+                      id:obj.id
+                  };
+                  state.resArr.push(tmpArr);
+              });
+              state.isLoad= false;
+          },
+          [fetchSend.rejected](state:any,action:any){
+              console.log("失败了");
+          }
+      }
+  });
+  export default sendReq.reducer;
+  export const {clear} = sendReq.actions;
+  ```
+
+
+
++ todolist(使用 redux-toolkit)
+
+  ```java
+  // store
+  import {configureStore} from "@reduxjs/toolkit";
+  import todoReducer from "./todolistSlice";
+  import asyncReducer from "./asyncModeSlice";
+  import sendReqReducer from "./sendReqSlice";
+  export default configureStore({
+      reducer: {
+          todo: todoReducer,
+          async: asyncReducer,
+          resMsg: sendReqReducer
+      }
+  })
+  
+  // todolistSlice
+  import {createSlice} from "@reduxjs/toolkit";
+  
+  export interface todoInitState {
+      id: string,
+      data: string,
+      btnShow: boolean
+  }
+  
+  const initialState: todoInitState[] = [];
+  const todoSlice = createSlice({
+      name: "todo",
+      initialState,
+      reducers: {
+          removeTodo(state: todoInitState[], action: any) {
+              let {payload} = action;
+              state.forEach((todo: any, index: number) => {
+                  console.log(todo);
+                  if (todo.id === payload) {
+                      state.splice(index, 1);
+                  }
+                  console.log(todo);
+              })
+              console.log(state);
+          },
+          addTodo(state: any, action: any) {
+              let {payload} = action;
+              state.push(payload);
+          },
+          btnDisplay(state, action) {
+              let {payload} = action;
+              state.forEach(todo => {
+                  if (todo.id === payload) {
+                      todo.btnShow = true;
+                  }
+              })
+          },
+          btnHidden(state, action) {
+              let {payload} = action;
+              state.forEach(todo => {
+                  if (todo.id === payload) {
+                      todo.btnShow = false;
+                  }
+              })
+          }
+      }
+  });
+  export const asyncAdd: any = (payload: any) => (dispatch: any) => {
+      setTimeout(() => {
+          dispatch(addTodo(payload));
+      }, 1000);
+  }
+  export const {removeTodo, addTodo, btnDisplay, btnHidden} = todoSlice.actions;
+  export default todoSlice.reducer;
+  
+  
+  
+  // asyncModeSlice
+  import {createSlice} from "@reduxjs/toolkit";
+  // 当state里的指向发生改变后，需要返回新的地址，在原有地址上添加数据则不会
+  const initialState = false;
+   const asyncSlice = createSlice({
+      name: "isAsync",
+      initialState,
+      reducers: {
+          changeStateToTrue(state) {
+              console.log(state);
+              state = true;
+              return state;
+          },
+          changeStateToFalse(state){
+              state = false;
+              return state;
+          }
+      }
+  })
+  export const {changeStateToFalse,changeStateToTrue} = asyncSlice.actions;
+  export default asyncSlice.reducer;
+  
+  // todolist
+  import TodoShow from "./TodoShow";
+  import TodoInput from "./TodoInput";
+  import {Card, Switch} from "antd";
+  import {useDispatch} from "react-redux";
+  import {changeStateToFalse,changeStateToTrue} from "../../redux/asyncModeSlice";
+  export default () => {
+      let dispatch = useDispatch();
+      const handlerSwitch = (flag:boolean)=>{
+          if(flag){
+              dispatch(changeStateToTrue());
+          }else{
+              dispatch(changeStateToFalse());
+          }
+      }
+  
+      return (
+          <>
+              <Card title={<TodoInput/>} bordered style={{width: 500, margin: "100px auto"}}
+                    extra={
+                        <Switch checkedChildren={"异步"} unCheckedChildren={"同步"}
+                                onChange={handlerSwitch}/>
+                    }>
+                  <TodoShow/>
+              </Card>
+          </>
+      );
+  }
+  
+  // todoInput
+  import { Input} from "antd";
+  import {useDispatch,useSelector} from "react-redux";
+  import {addTodo,todoInitState,asyncAdd} from "../../redux/todolistSlice";
+  
+  
+  export default  ()=> {
+          const dispatch = useDispatch();
+          let isAsync = useSelector((state:any)=>state.async)
+          console.log("async",isAsync);
+  
+          /**
+            @description: 验证是否添加todo
+          */
+          const additionTodo = (e:any):void=>{
+              let value = e.target.value;
+              if(value.trim() === "") return ;
+              let todo:todoInitState = {
+                  id: Date.now()+"",
+                  data:value,
+                  btnShow:false
+              };
+              console.log("async",isAsync);
+              if(isAsync){
+                  dispatch(asyncAdd(todo));
+              }else{
+                  dispatch(addTodo(todo));
+              }
+              e.target.value = "";
+          };
+          return (
+              <>
+                  <Input onPressEnter={additionTodo} placeholder={"输入你要做的事情"}/>
+              </>
+          );
+  }
+  
+  // todoShow
+  import {List,Button} from "antd";
+  import {useSelector, useDispatch} from "react-redux";
+  import {todoInitState,removeTodo,btnDisplay,btnHidden} from "../../redux/todolistSlice";
+  export default () => {
+  
+      let todoData:todoInitState[] = useSelector((state: any) => {
+  
+          return state.todo;
+      })
+      let dispatch = useDispatch();
+  
+      const {Item} = List;
+      return (
+          <>
+              <List
+                  bordered
+                  dataSource={todoData}
+                  renderItem={({id,data,btnShow}) => (
+                      <Item key={id} onMouseOut={()=>{dispatch(btnHidden(id))}} onMouseOver={()=>{dispatch(btnDisplay(id))}}>
+                          {data}
+                          <Button type={"primary"} danger
+                                  style={btnShow ? {float:"right", display:"block"}:{float:"right",display:"none"}}
+                                  size={"small"} onClick={()=>{dispatch(removeTodo(id))}}>
+  
+                              删除</Button>
+                      </Item>
+                  )
+                  }
+              />
+          </>
+      );
+  }
+  ```
+
+
+
+## 钩子函数
+
++ 特别注意
+
+  ```java
+  /*
+  1.useXxx()开头的都是钩子函数，只有自定义函数可以使用
+  2. 使用 useState() 钩子函数后，每次setXxx()后该函数组件就会重新渲染一次(内部全部执行一遍)
+  */
+  ```
+
+  
+
++ 介绍
+
+  ```java
+  /*
+   Hook 是 React 16.8 的新增特性。它可以让你在不编写 class 的情况下使用 state 以及其他的 React 特性
+   
+  */
+  ```
+
++ useState
+
+  ```java
+  /*
+   useState使用
+  
+    介绍
+    	  useState是16.8版本新增的一个钩子函数,它可以再函数组件中操作状态来触发函数的重新调用(重新渲染页面)
+    语法
+    	 let [state,setState] = useState("状态值") // 该钩子函数返回的是一个数组，其第一个位置上的是当前的组件的状态，第二个位置上的是改变状态的函数，当此函数被调用后 此组件(一般是函数)会被重新调用 
+    	
+    使用
+    	import React, {useState} from "react";
+      import {Card, Input, Form} from "antd";
+  
+      export default () => {
+      	// useState({count:1}) 传入的是一个状态值，该函数返回的是一个数组
+          let [todo, setTodo] = useState({count:1}) ;
+          const handlerClick = ()=>{
+              console.log(this);
+               todo = JSON.parse(JSON.stringify(todo)); // 如果状态是复杂数据类型则需要深拷贝
+              todo.count++;
+              setTodo(todo);
+          }
+          return (
+              <div>
+                  <Card title="todolist">
+                      <div onClick={handlerClick}>
+                          今天天气很 {todo.count}
+                      </div>
+                  </Card>
+              </div>
+          );
+      }
+    注意
+    	使用useState创建的状态如果是复杂数据类型则需要进行深拷贝才能进行页面局部刷新(底层认为地址没有改变则没有变化)
+    	setState可以传入任何参数，但一般传入的是原状态改变后的值，如果传入其他类型的值，可能导致引用错误(如原始状态是一个对象，且做了获取属性 xx.a的操作，但改变为了一个数组后，重新调用该函数，因无法从数组上获得属性而报错)
+    	useState钩子函数多用于函数组件，此时其可以通过时间调用来调用来更改state，以达到重绘页面
+    	此钩子函数的渲染只有在事件触发时才会执行(无生命周期函数驱动)
+    	在useState("x") 接收了状态后，会做一个判断，如果当前useState钩子函数没有管理状态则会返回一个该状态的初始值及操作状态的方法，当管理了状态则直接返回管理的数据，每次改变状态重绘时(重新调用)，因此每次都会做这个判断(使用了享元模式)
+  */
+  ```
+
++ useEffect
+
+  ```java
+  /*
+   介绍
+   	useEffect钩子让函数拥有了 类似 componentDidMount,componentDidUpdate,componentUnmount 生命周期函数的功能 ，在这些阶段该钩子会被调用
+   
+   useEffect钩子函数调用时机
+   	在函数组件首次渲染时
+   	在指定数据更新时(第二个参数里的内容，如果没有指定，默认为监听此函数的更新，指定了就按指定的来)
+   	在此函数组件被卸载时(调用第一个参数的返回值)
+   	
+   语法
+   	useEffect(()=>{ "需要执行的代码"}{,[]}); // {,[]}为监听的目标，只有这些改变了才会继续执行此副作用
+  
+   常用搭配
+   
+   	// 此副作用函数只在组件初次加载和现在时执行
+   	useEffect(
+   		// 此函数在组件初次加载和指定组件更新时执行(可以在第二个参数传入一个空数组，表示不监听任何变化，此时只会在初次加载执行相当于 componentDidMount();如果没有传入第二个参数表示监听此函数组件的更新，只要此函数的状态一更新就会执行；如果传入指定目标到数组中，只要这些值一更新此函数就会执行)
+   		()=>{    
+              console.log("componentDidMount");
+  
+              // 在return的函数在函数组件卸载时执行
+              return ()=>{
+                  console.log("componentWillUnmount"); 
+              }
+   	},[]) // 监听列表为空，也就是说监听更新为空，此 effect钩子函数只在 初次加载和即将卸载时执行
+  
+   注意
+   	useEffect在第二个参数没有传入参数时，在此函数组件被初次挂在和组件更新时调用
+   	useEffect在第二个参数传入指定参数后(是一个数组，在这个数组内可添加监听目标，只有这些目标更新了，effect函数就会执行)，即 在此函数组件初次被宰和指定参数更新后调用
+   	useEffect在第二个参数传入一个空数组后，表示不监听任何更改目标，仅在函数组件首次加载后调用一次
+   	一个函数组件可以使用多个 useEffect(副作用)钩子函数
+   	useEffect函数中的第一个参数可以指定一个函数返回值，当这个函数组件被卸载时，该函数的回调就会执行(相当于componentWillUnmount)
+   	一个 useEffect可以同时拥有类似 componentDidMount,componentDidUpdate,componentUnmount 的状态，我们可以对其进行配置，来完成我们需要的状态
+   	
+   使用
+   	import {useEffect,useState} from "react";
+      export default () => {
+          let [count,setCount] = useState(0);
+          
+          // 默认在 函数组件挂载时，函数组件更新时，函数组件卸载时执行，如果传入第二个参数，且是一个数组是只在 函数组件挂载时，函数组件卸载时 执行
+          useEffect(()=>{  // 当此组件初次更新时会调用和指定监听目标更新时会调用(如果没有指定则组件更新就会调用)
+              console.log("我来了");
+              return ()=>{ // 当此组件被卸载会调用此回调
+              	console.log("此组件被卸载了");
+              }
+          },[])
+  
+          return (
+              <>
+                  <h2>hookTest</h2>
+                  <h3 onClick={()=>{setCount(count++)}}>{count}</h3>
+              </>
+          );
+      }
+  */
+  ```
+
+
+
+## 新特性
+
++ PureComponent
+
+  ```java
+  /*
+   介绍
+  	React.PureComponent 与 React.Component 几乎完全相同，但 React.PureComponent 通过props和state的浅对比来实现 shouldComponentUpate()。
+  
+  注意
+  	在PureComponent中，如果包含比较复杂的数据结构，可能会因深层的数据不一致而产生错误的否定判断，导致界面得不到更新。
+  	如果定义了 shouldComponentUpdate()，无论组件是否是 PureComponent，它都会执行shouldComponentUpdate结果来判断是否 update。如果组件未实现 shouldComponentUpdate() ，则会判断该组件是否是 PureComponent，如果是的话，会对新旧 props、state 进行 shallowEqual 比较，一旦新旧不一致，会触发 update。
+  	浅对比：通过遍历对象上的键执行相等性，并在任何键具有参数之间不严格相等的值时返回false。 当所有键的值严格相等时返回true。shallowEqual
+  */
+  ```
+
+
+
+
+## 常用库
+
++ Nprogress
+
+  ```java
+  /*
+   作用
+   	可以以一种伪进度调的形式过渡浏览器请求效果
+   安装
+   	npm i nprogress
+   使用
+   	import axios from "axios";
+      import Qs from "qs";
+      import NProgress from "nprogress"; // 引入进度条包
+      import "nprogress/nprogress.css"; // 引入进度条样式  ,两个包需同时引入
+  
+      // 请求拦截器
+      axios.interceptors.request.use((config)=>{
+          let {method,data} = config;
+          NProgress.start(); // 开启伪进度条
+          if(method?.toLocaleUpperCase() === "POST"){
+              config.data = Qs.stringify(data);
+          }
+          return config;
+      })
+      // 响应拦截器
+      axios.interceptors.response.use((req) => {
+          NProgress.done();
+          return req;
+      }, (err) => {
+          // 后序再来改变state状态表示网络错误
+          NProgress.done();
+          console.log(err);
+          alert("网络错误");
+      })
+      export default axios;
+  */
+  ```
+
+  
 
 ## 前言
 
