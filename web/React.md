@@ -18,35 +18,97 @@
    	宏任务
    		异步任务的一种，如定时器,ajax回调
    	微任务
-   		异步执行的一种，如promise的函数调用(then方法,catch方法)，await 关键字后的语句都会当作微任务，相当于嵌套了一个then
+   		异步执行的一种，如promise的函数调用(then方法,catch方法)setState 微任务
    		
    所有任务的执行顺序
    	同步任务 > 微任务 > 宏任务
    
+   js代码执行流程及任务队列划分
+   	首先，js分为简单任务(直接执行)，复杂任务(读取到时在堆区开辟一块空间，等待调用执行)，微任务(等待当前上下文(作用域)所有简单任务执行完毕后执行)，宏任务(等待当前上下文(作用域)所有简单任务和微任务执行完毕后执行) ， 其中 复杂任务，微任务，宏任务，通常使用函数包裹，有自己的上下文(作用域)，因此在执行到这些内容时，其上下文的所有任务还会进行划分，在执行时进入对于的任务队列等待执行
+   	js的任务队列分为 简单任务队列，微任务队列，宏任务队列，遵守队列原则(先进先出，即先放到队列的数据，先执行) ， 宏任务如果是定时器，则在进入宏队列的同时开启定时，以便在调用时可以直接被钩子函数勾出
+   
    js执行规则
-   	简单任务直接执行;复杂任务读取到堆中，等待调用执行;微任务进入微队列，等待当前上下文中(当前上下文指，如果此时在全局执行代码则当前上下指的就是全局，如果在函数中执行，则当前上下文指的就是当前函数)所有简单任务队列执行完毕后开始执行;宏任务进入宏队列，等待当前上下文所有简单任务队列和微队列执行完毕后开始执行
+   	简单任务直接执行;复杂任务读取到堆中，等待调用执行;微任务进入微队列，等待当前上下文中(当前上下文(作用域)指，如果此时在全局执行代码则当前上下指的就是全局，如果在函数中执行，则当前上下文指的就是当前函数)所有简单任务队列执行完毕后开始执行;宏任务进入宏队列，等待当前上下文所有简单任务队列和微队列执行完毕后开始执行
    
    注意
    	简单任务直接执行，复杂任务则进入堆中等待调用执行，宏任务和微任务则进入对应的队列，等待执行，待所有简单任务执行完后，在执行微队列里的内容，然后执行宏队列里的内容
-   	在执行复杂任务，宏任务和微任务里的内容时，还会对该上下文内容的进行任务类型的划分，依然遵守执行规则,如此微任务或宏任务中，又包简单任务，含宏任务或微任务，则在进入对应的队列等待执行，直到全部任务执行完毕
-   	return 默认会当作简单任务执行不管其被什么东西进行包装
-   	使用了await关键字的代码和其后的代码底层会使用then包裹(升级为微任务)，而return为同步执行(简单任务)，因此无法返回promise成功的回调，而是返回的promise对象，如下代码，因此await不应和return同时使用，否则返回的结果可能达不到预期
-          export const loginReq = async (username: string, password: string) => {
-          setTimeout(async() => {
-              console.log(1); // 同步执行
-              
-              // 其后的代码在底层被then包裹(不包括return.return)
-              //当简单任务执行完毕后，执行此任务
-              let res = await axios.post(HOST + PORT + LOGIN, {username, password});
-              console.log(res);
-              console.log("www");
-              setTimeout(() => {
+   	在执行复杂任务，宏任务和微任务里的内容时，还会对该上下文内容的进行任务类型的划分，依然遵守执行规则,如此微任务或宏任务中，又包简单任务，宏任务或微任务，则在进入对应的队列等待执行，直到全部任务执行完毕
+   	return 默认会当作简单任务执行不管其被什么东西进行包装，我们可以返回一个promise实例对象(同步执行)，返回给其调用者(promise实例的函数内容也有自己的上下文，执行时会进入对应的队列等待调用，如果再promise的状态确定点是一个微任务或宏任务，打印其(console.log()同步执行),则拿到的是一个pendding状态的promise，因为其的状态还没确定)
+   	使用了 await关键字后，会等待目标promise的执行(即等待该promise获取resolve或reject)，此时阻塞await后的代码执行，当其执行完后(该promise获取了resolve或reject),await才会执行，如果此时resolve的结果被一个宏任务包裹，则表示此时promise的状态在该宏任务执行时才变更，如果此时resolve的结果被一个微任务包裹，则表示此promise的状态在此微任务执行时才变更，如果是一个简单任务则直接执行(await会等待promise状态变更后执行)
+   	 await会阻塞接下来的代码执行(除了return)等待目标  Promise确认状态后，await才会拿到对应的数据，并放行，因此await的执行队列 前一个promise的状态结束时机确定(await再其确认了状态后立即执行，如果此时前一个promise状态是再同步队列确认的则这个await就同步执行，如果promise状态是再微队列或宏队列确认的则这个await就再其后执行(因此返回时也需要进行层级包裹，返回一个同步的promise，然后其的状态再await确认状态后执行，此时才能拿到想要的数据)
+   	 return是同步执行的，因此如果我们想要返回一个我们需要得到的值(该值是微任务或宏任务)，就必须要返回一个同步的promise，然后该promise的状态的确认是在需要得到的数据之后的，此时外部再使用await关键字等待返回的promise确认状态，此时就能拿到需要的返回值
+   
+   return+promise返回使用(拿到一个我们需要得到的返回值)
+       export let getCategoryList = async ()=>{
+          // await会阻塞接下来的代码执行(除了return)等待目标  Promise完成状态后，await才会拿到对应的数据，并放行，因此await的执行是在目标promise确认状态之后的
+          // 前一个promise的状态结束时机确定(await再其确认了状态后立即执行)
+         let res =  await getCategoryLitReq();
+          if(res && res.data){ // 获取到服务器数据
+              let tableArr:TableContent[] = [];
+              res.data.data.forEach((item:any)=>{
+                  let showObj:TableContent = {name:"",key:""};
+                  showObj.name = item.name;
+                  showObj.key = item._id;
+                  tableArr.push(showObj);
+              })
+              // return为同步返回，因此我们必须返回一个promise实例(也是同步执行)，
+              // 然后调用方使用 await 等待此promise结果来达到阻塞后序代码执行，等该任务(宏任务)执行后，await拿到成功的回调 。 因此此时只需要将该promise实例的状态确认点，在需要的数据之后即可
+              // return new Promise((resolve)=>{
+              //     setTimeout(()=>{resolve(tableArr)});
+              // })
+              // return new Promise((resolve)=>{
+              //     console.log(tableArr);
+              //     setTimeout(()=>{resolve(tableArr)});
+              // })
+              return tableArr;
+              // setMsgArr({loading: false, msgArr: tableArr});
+          }else{
+              message.warning("当前网络不稳定，请售后再试");
+          }
+      }
+   
+   await调用示例
+      function fn1() {
+        setTimeout(() => {
+          console.log(0); // 5
+        });
+      }
+      function fn2() {
+        console.log(1); // 2
+        new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(2);
+            console.log(2); // 6
+          });
+          console.log(3); // 3
+        });
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
   
-                  console.log("wo"); // 当当前上下文所有的简单任务和复杂任务执行完毕后执行宏任务
-                  return res;  // 本意想返回primise成功的回调，但return因为是同步执行，await来不及获取成功的回调，此时res同步执行的结果为fulfill状态的promise，因此返回的就是这个状态
-              }, 1000)
-          }, 100);
-      };
+            resolve(10);
+            console.log(8); // 7
+          });
+        });
+      }
+      async function fn3() {
+        let res = await fn2(); // 阻塞执行，等待fn2()promise的状态变更
+        console.log("res:", res); // 8 res=10
+      }
+      console.log(4); // 1
+      function fn4() {
+        let resP = new Promise((resolve, reject) => {
+          setTimeout(() => {
+            console.log(9); //9
+            resolve(5);
+          });
+        })
+        // 同步执行，此时因为resP状态没变更，所以打印Pendding状态
+        console.log("resP:", resP); // 4 resp=new Promise<Pendding>
+        return resP;
+      }
+      fn1();
+      fn3();
+      fn4();
    	
    
    调用示例
@@ -62,6 +124,34 @@
               return res; // 同步任务， 拿到 axios.post回调的值，直接返回 因此为一个promise对象
           },1000)
       };
+      
+      
+      // promise状态调用
+      const { log } = console;
+      function a() {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(1);
+          }, 0);
+        }).then((value) => {
+          console.log(value) // 3
+          return 3;
+        }, (reason) => { console.log(reason) })
+      }
+      const b = async () => {
+        let res = await a();
+        log("res=", res); // 4
+      }
+      const p = a();
+      log(p); // 1  此时是pendding状态的promise
+      b();
+      log(2); // 2
+      new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve(3);
+          log(4); // 5
+        }, 0);
+      })
       
       // promise 调用示例
       执行顺序   
@@ -117,49 +207,10 @@
   */
   ```
 
-  
 
-+ react编写tsx
 
-  ```java
-  /*
-  ts中接口的使用
-        export interface LoginStateLimit {
-          loginState:number,
-          loginToken:string,
-          entry():void,
-      }
-      // 普通对象可以把接口当作对象的key和类型约束，且必须实现接口里的所有属性和方法
-      const initialState:LoginStateLimit = {
-          loginState: -1,
-          loginToken:""，
-          entry(): void {
-      	}
-      }
-      // 类需要实现接口里的所有属性和方法
-      class Login implements LoginStateLimit{
-         public loginToken:string = "";
-         public loginState:number = -1;
-         entry(): void {
-     		}
-      }
-   注意
-   	使用tsx编写程序时，必须要写返回值，和数据类型，否则可能编译报错
-   	react默认不支持tsx，如果需要使用，则需在创建项目时添加如下
-   		npx create-react-app 项目文件名 --template typescript
-  	ts无法引入识别图片资源，需要在 项目 src目录下 创建 image.d.ts 文件，并写入如下内容
-  	    declare module '*.svg'
-          declare module '*.png'
-          declare module '*.jpg'
-          declare module '*.jpeg'
-          declare module '*.gif'
-          declare module '*.bmp'
-          declare module '*.tiff'
-          declare module '*.pdf'
-  */
-  ```
 
-  
+
 
 + 概念
 
@@ -205,7 +256,7 @@
    	没有使用state(setState)属性来重绘界面的就是无状态组件
    
    一般组件
-   	自己引入的组件就是一般组件 , 如 <Component/>
+   	自己引入的组件就是一般组件(通常会重复使用) , 如 <Component/>
    路由组件
    	由路由器渲染的组件为路由组件,如 <Route path="/" eleemnt={<Component/>}>
    
@@ -319,6 +370,14 @@
    12. 解构赋值原则：读取值可以进行解构，写值(修改数据)不应该进行解构(，因为在解构后，简单数据类型是值传递，修改后不会作用子原对象或数组上，只有复杂数据类型的解构才会影响原地址(因为是地址传递))
    13. 已经开启的定时器，在没有关闭的情况下，只有其执行完毕了才会自行取消，因此因即使关闭没有使用的定时器，避免内存浪费
    14. 解决跨域的方式有 ,jsonp,cors,前端代理(再package.json中 添加 "proxy":"url")
+   15. 注意组件渲染的位置，如果组件在错误的位置渲染可能会产生找不出位置的报错(通常检查配置文件，是否有错误调用，如router,config等配置文件)
+   16. 钩子函数只能使用在函数组件中，且钩子函数的初始化(调用)的外侧包裹的必须是函数组件，如外侧包裹的函数不是函数组件则会报错(被外部以组件<Component/> 引入的函数被称为组件函数)
+   17. react 16以上 再index.ts中新增了<React.StrictMode> 组件包裹。再dev开发模式下一个组件初次加载和更新时会执行两次(为了防止side effect引起的bug) ， 不使用该组件时，组件加载和更新时只会执行一次
+   18. 再编写完react代码后 ，运行 npm run build 即可构建静态资源，此时webpack打包的代码会被当作生产模式运行(需要部署到服务器，可以使用 serve包快速搭建本地服务器，或使用node部署)
+   19. 在写函数组件时，只需用到一次的属性，不用重复获得的属性可以写在函数组件体的外面(即在，该组件被引入并使用时会执行一次，以后该函数发生更新，只会执行函数体李的内容)
+   20 . React独有，如果需要将后台返回的string类型 html标签转换为 dom类型的html标签 可以使用 React中的一个属性 dangerouslySetInnerHTML，其接收的是一个对象，该对象的属性为__html 值为 string类型的html标签
+   	如 <p dangerouslySetInnerHTML={{__html: content}}/> // 在虚拟dom中写js表达式需要使用 {}包裹
+   21.需要改变的状态,且其全局大多数组件中都需要使用的组件才需要存储在redux里，否则只用存储到localstorage里
   */
   ```
   
@@ -384,9 +443,172 @@
   */
   ```
   
+
+## tsx
+
++ 注意
+
+  ```java
+  /*
+   1. ts 严格限制数据类型，如果该数据在原数据里不存在可预定义，无法预定义可设置为any类型
+   2. ts使用 | ? 来完成 方法的重载， 如 fn1(content:string[]|string ,comment ?:string) , 再使用时再去
+   3. 直接指定一个对象的接收的所有属性和其值的数据类型，相当于给定了一个接口进行限制，不过此接口在对对象时起限制作用。在对类时，是接口作用(类需要实现接口的所有属性和方法(java中的接口只用实现方法，共享属性))
+  */
+  ```
+
++ 方法(函数)重载
+
+  ```java
+  /*
+   介绍
+   	ts使用 | ? 来完成 方法的重载
+   补充
+   	重载指，相同函数(方法)不同形参个数或类型即可构成重载
+   注意
+   	在重载后，一个形参的数据类型如果可能接收多个值时，再实际使用时，需要对他的类型进行断言(即强制转换)，便于代码提示和语法检查
+   	
+   示例
+    const handlerOpposite = (title: string, content: string[]|string): React.ReactNode => {
+          let res: React.ReactNode = null;
+          if (title === MERCHANDISE_IMAGES) {
+              content = content as string[]; // 此时指明content为string[]类型 ,便于代码提示和类型限制
+              res = (
+                  <>
+                      {
+                          content.map((url:string) => (
+                              <img src="" alt={"不见了"}/>))
+                      }
+                  </>
+              );
+          } else if (title === MERCHANDISE_DETAILS) {
+  
+          }
+          return res;
+      }
+  */
+  ```
+
+  
+
++ 接口的使用
+
+  ```java
+  /*
+  ts中接口的使用
+        export interface LoginStateLimit {
+          loginState:number,
+          loginToken:string,
+          entry():void,
+      }
+      // 普通对象可以把接口当作对象的key和类型约束，且其对象内的属性和方法必须为接口的设定的属性和方法
+      const initialState:LoginStateLimit = {
+          loginState: -1,
+          loginToken:""，
+          entry(): void {
+      	}
+      }
+      // 类需要实现接口里的所有属性和方法
+      class Login implements LoginStateLimit{
+         public loginToken:string = "";
+         public loginState:number = -1;
+         entry(): void {
+     		}
+      }
+   注意
+   	tsx可以在形参上设置 ? 来完成函数的重载(?表示接不接受都行),如 fn(a:number,b?:number):void
+   	使用tsx编写程序时，必须要写返回值，和数据类型，否则可能编译报错
+   	react默认不支持tsx，如果需要使用，则需在创建项目时添加如下
+   		npx create-react-app 项目文件名 --template typescript
+  	ts无法引入识别图片资源，需要在 项目 src目录下 创建 image.d.ts 文件，并写入如下内容
+  	    declare module '*.svg'
+          declare module '*.png'
+          declare module '*.jpg'
+          declare module '*.jpeg'
+          declare module '*.gif'
+          declare module '*.bmp'
+          declare module '*.tiff'
+          declare module '*.pdf'
+  */
+  ```
+
+
++ 泛型的使用
+
+  ```java
+  /*
+   泛型和java中的泛型类似，填写后，可以限制一个属性的接收限制
+  */
+  ```
+
++ 组件自定义状态
+
+  ```java
+  /*
+  注意
+  	每个组件类再使用前应该指定其对应的props和state的接口泛型(表示可接收的props属性和组件的状态)，并传入到组件类中，以便更好的代码提示和类型检查，当没有指定props参数时，外部无法传入props参数到props对象下
+  总结
+     类组件只有指定了props泛型后才能从外部接收对应的props数据,否则会报错(因为该类没有指定props属性个数，导致tsx无法识别要接收的个数)
+   例子
+   	export default class A extends PureComponent {
+          constructor(props: any) {
+              super(props);
+              this.state = {
+                  count: 1
+              }
+          }
+  
+          render(): React.ReactNode {
+              return (
+                  <>
+                      <h1>我是A组件</h1>
+                      <B count={12} render={(props:any)=> (<C name={props} />)}/>
+                  </>
+              );
+          }
+      }
+      interface Props {
+          count ?:number;
+          render ?:any;
+      }
+      interface State {
+  
+      }
+      // 此时B的实例对象可以从外部接收 count和render到props对象下
+      class B extends PureComponent<Props,State> { // 指定了props和State
+          render(): React.ReactNode {
+              console.log(this.props);
+              return (
+                 <>
+                  <h1>我是B组件</h1>
+                 </>
+              );
+          }
+      }
+  
+      interface CState {
+  
+      }
+      interface CProps {
+          name ?:string;
+      }
+      //指定了props和State，此时外部可以传入一个 name属性到props对象下
+      class C extends PureComponent<CProps,CState> { 
+          render(): React.ReactNode {
+              return (
+                  <>
+                      <h1>我是C组件</h1>
+                  </>
+              );
+          }
+      }
+  */
+  ```
+
   
 
 ## 技巧
+
+
 
 + 解决react报错问题
 
@@ -514,6 +736,7 @@
    5. 在一个组件实例对象生成完毕后，其地址内底层已经隐式挂载了react底层的生命周期函数，当它们调用时，是从该地址顶层开始查找，(因此我们可以重写这些生命周期函数，来完成生命周期函数的过程封装),如果没找到则 寻址指针下移 最终会移动到该地址的底部去调用react底层封装的生命周期函数，找到后调用，寻址指针重新回到该地址顶部，准备下一次属性或方法调用
    6. react(或js中)在事件调用时如果想携带参数，可以写为 onClick={(e) => this.removeUserContent(uuid, e)} ,该语句表示，当这个按钮点击时，传入一个函数到react底层，然后react调用传入了一个环境变量，此时通过此调用来完成另一个方法调用
    7. 函数也可以返回虚拟dom
+   8. 在完成基础布局时可以使用flex完成，然后再此基础上填写目标元素，不要不布局就开始画页面，这样可能产生bug
   */
   ```
 
@@ -594,6 +817,7 @@
   	1. render返回的虚拟dom最终会由react底层渲染到其引用的位置上，最终会由index.js挂载到public下的html页面上(期间还会进行diff算法差异比较)
   	2. 再引入一个组件类时，如果没有指定组件名，则react会默认引入该组件下的index.jsx 文件
       3. 再引入一个组件类时，如果是jsx或js文件,则后缀可以不写
+      4. 主流后台验证接收消息的方式有 ，cookie,session-cookie,token
       
   */
   ```
@@ -648,22 +872,325 @@
   ```
   
 
+### 常见布局
 
++ flex完成左右布局
+
+  ```java
+  /*
+   <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+      html,
+      body,
+      #root {
+        width: 100%;
+        height: 100%;
+      }
+  
+  
+      .app {
+        display: flex;
+        width: 100%;
+        height: 100%;
+      }
+  
+      .sider {
+        flex: 1;
+        background-color: #177ddc;
+      }
+  
+      .show-content {
+        display: flex;
+        flex-flow: column;
+        flex: 3;
+        background-color: #146262;
+      }
+  
+      .main-header {
+        flex: 1;
+        background-color: #58d1c9;
+      }
+  
+      .content {
+        flex: 3;
+        background-color: #1d3712;
+      }
+  
+      .main-footer {
+        flex: 1;
+        background-color: #112123;
+      }
+    </style>
+  </head>
+  
+  <body>
+    <div id="root">
+      <div class="app">
+        <div class="sider">sider</div>
+        <div class="show-content">
+          <header class="main-header">
+            header
+          </header>
+          <div class="content">content</div>
+          <footer class="main-footer">footer</footer>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>
+  */
+  ```
+
+  ![image-20220507110203337](D:\typora_import_images\typora-user-images\image-20220507110203337.png)
 
 ## 知识集中点
+
++ 传递props参数时的使用
+
+  ```java
+  /*
+   使用行内属性传递参数到一个组件中时
+   	该参数会被放到组件的props参数下
+   使用组件包裹传递参数到一个组件中时
+   	该参数会被放到组件的props的children属性下
+   		
+   注意
+   	在传递props参数时，如果传递的是一个组件或者标签，传递时会被react映射为一个对象 此时这个对象中存储着虚拟dom的包裹层级，我们可以选择合适的部分将其载入，然后react底层会转换为对于的虚拟dom
+  */
+  //使用 
+  // guide.tsx
+  import React from "react";
+  import {useSelector} from "react-redux";
+  import {Navigate, Outlet} from "react-router-dom";
+  import {LoginStateLimit} from "../../redux/slice/loginStateSlice";
+  import {useMatch} from "react-router-dom";
+  import Menu from "./MyMenu";
+  import MenuLayout from "./MenuLayout";
+  import logo from "../../assets/img/logo.png";
+  import "./css/menu.less";
+  
+  export default () => {
+  
+      const loginState: LoginStateLimit = useSelector(({loginState}: LoginStateLimit): any => loginState);
+  
+      /**
+       @description: 当匹配到 输入的路由时给出该配置新的配置对象
+       */
+      const match = useMatch("/guide"); // 解决重复渲染问题
+  
+      /**
+       @description: 路由拦截，根据当前登录状态导航到对应页面
+       @tips: antd配合react时，不能渲染在一个组件中同时渲染多个相同的组件，要注意逻辑编写严谨，否则报错很难定位位置
+       */
+      let loginInterceptor = () => {
+          if (loginState.loginToken.trim() === "") { // 过滤掉没登录的情况
+              return (<Navigate to={"/login"}/>);
+          } else if (match !== null) { // 过滤掉误入情况
+              return (<Navigate to={"/guide/home"}/>);
+          }
+      }
+  
+      /**
+       @description: 最近一级子路由展示
+       */
+      let nextChildRouterShow = () => {
+          return (<Outlet/>);
+      }
+  
+      /**
+       @description: 做一个身份检查，如果已经登录且命中的是该路由则引入主路由
+       */
+      return (
+          <>
+              {loginInterceptor()}
+  
+              <MenuLayout>
+          		// 将虚拟dom传入给该组件，会被放置到该组件的props的children参属下
+                  <>
+                      <div className="main-nav-menu">
+                          <div className="main-nav-menu--title">
+                              <img src={logo} alt="xxx待定"/>
+                              后台管理系统
+                          </div>
+                          <Menu/>
+                      </div>
+                      <div className="content-show">
+                          {nextChildRouterShow()}
+                      </div>
+                  </>
+              </MenuLayout>
+  
+          </>
+      );
+  }
+  // MenuLayout.tsx
+  import {Layout} from "antd";
+  const {Sider,Header,Content,Footer} = Layout;
+  export default (props:any) => {
+      return (
+          <>
+              <Layout>
+          		/*
+          		props.children.props.children[0] 表示的为下列部分
+          		  <div className="main-nav-menu">
+                          <div className="main-nav-menu--title">
+                              <img src={logo} alt="xxx待定"/>
+                              后台管理系统
+                          </div>
+                          <Menu/>
+                      </div>
+                   props.children.props.children[1] 表示的为下列部分
+                   <div className="content-show">
+                          {nextChildRouterShow()}
+                      </div>
+          		*/
+                  <Sider>{props.children.props.children[0]}</Sider>
+                  <Layout>
+                      <Header>Header</Header>
+                      <Content>Content</Content>
+                      <Footer>Footer</Footer>
+                  </Layout>
+              </Layout>
+          </>
+      );
+  }
+  ```
+
+  
+
+
 
 + 前端代理
 
   ```java
   /*
    介绍
-   	当后端不配合我们使用 jsonp,cors解决跨域时，前端的一个解决跨域的方法
+   	当后端不配合我们使用 jsonp,cors解决跨域时，前端的一个解决跨域的方法(访问接口),他还可以共享指定代理后端的public文件下的内容，如图片，音频文件等
    作用
-   	帮助转发请求
+   	帮助转发请求，和获取后端public文件下的资源
+   注意
+   	前端代理会先去当前域名下查找，如果没找到指定资源才会去后端的public下查找，因此指定域名要和当前域名的地址保持一致，否则无法完成代理查找(端口使用不受限制)
+   	
    配置方法
-   	再package.json中添加 "proxy":"url"
+   	再package.json最外层中添加 "proxy":"url"
    工作过程
    	会先在当前端口下查找是否可以解决，解决不了会由代理转发请求，去另一个端口下查找解决
+  */
+  ```
+
+
+
+
++ 装饰器(date:2022.5.5)
+
+  ```java
+  /*
+   介绍
+   	装饰器是 Es7的一个提案语法(可能发生更改)，它可以对一个类，方法(类中的方法或对象中的方法)或者变量进行装饰
+   	
+   普通类装饰器
+   	工作流程
+   		相当于调用该装饰器函数并将装饰类以形参的方式传入，因而可以向类中装饰信息
+   	使用	
+          function withRouter(target) {
+            console.log('withRouter:', target);
+          }
+  
+          @withRouter 
+          class App {} // 相当于将 A这个原型类当作 withRouter 的第一个参数传递，往其身上挂载的方法最终会以static属性或方法的形式挂载到该原型类身上(js中只有类能使用static属性和方法)
+      
+   带参装饰器使用
+    	工作流程
+    		相当于调用该装饰器函数并将装饰器参数以形参方式传入，当调用完毕后，底层会去检查是否有返回值，及返回值是否为函数，如果为函数则调用此函数并把装饰对象传入，完成装饰
+    	function withRouter(params) { // 接收参数的函数
+        console.log('withRouter.params:', params);
+        return function(target) { // 装饰器函数
+          // 给被装饰的类添加一个静态属性
+          target.params = params;
+          // 也可以给原型添加函数和属性，例如：target.prottotype.name = 'Jameswain';
+            console.log('withRouter.target:', target);
+        }
+      }
+  
+      @withRouter('Jameswain')
+      class App {
+      }
+      console.log(App) // 向App类中挂载静态属性
+      
+   多个装饰器嵌套使用时的执行顺序
+    	顺序
+    		从上到下先执行有参构造器，然后从上到下执行无参构造器
+    	实例
+          function log(name) { // 接收参数层
+            console.log('log.name:', name)
+            return function logDecorator(target) { // 装饰器层
+              console.log('log.target: ', target);
+            }
+          }
+  
+          function connect(name) { // 接收参数层
+            console.log('connect.name', name);
+            return function connectDecorator(target) { // 装饰器层
+              console.log('connect.target: ', target);
+            }
+          }
+  
+          function withRouter(target) { // 装饰器层
+            console.log('withRouter.target: ', target);
+          }
+  
+          @log('日志')
+          @withRouter
+          @connect('连接器')
+          class App {
+          }
+     
+      结果
+      	log.name: 日志
+          connect.name 连接器
+          connect.target:  [class App]
+          withRouter.target:  [class App]
+          log.target:  [class App]
+          
+    方法装饰器
+    	工作流程
+    		和以上有参无参构造器原理一致(无参则直接调用并将装饰对象传入，有参则先传入装饰参数，如果返回值是一个函数则在传入装饰对象)，只不过，方法装饰器接收的是三个形参，第一个形参为传入的实例(通常是类的实例)，第二个形参为被装饰的函数名，第三个形参为 被装饰函数的描述对象
+    	实例
+          function log(target, name, descriptor) {
+            console.log('log.target: ', target);
+            console.log('log.name: ', name);
+            console.log('log.descriptor: ', descriptor);
+  
+          }
+  
+          class App {
+            @log
+            onClientList() {
+              console.log('App.onClientList');
+            }
+          }
+  
+          const app = new App();
+          app.onClientList();
+    	执行结果
+    	    log.target:  {}
+          log.name:  onClientList
+          log.descriptor:  {
+            value: [Function: onClientList],
+            writable: true,
+            enumerable: false,
+            configurable: true
+          }
+          App.onClientList
+  注意
+  	装饰器函数的返回值可以不写，如果要写，必须为 函数,原传入值或null
+  	装饰器和装饰器模式的理念一致，让一个需要装饰的类或对象通过函数传递的方式向这个类或对象中添加属性或方法
   */
   ```
 
@@ -859,6 +1386,18 @@
   
 
 ## 路由
+
++ 注意
+
+  ```java
+  /*
+   1. 手动改变路由会破坏网站结构，导致redux重新更新状态(需要持久化)
+   2. <Navigate /> 做路由重定向时，只有返回到虚拟dom中才能完成重定向
+   3. 使用 useNavigate()钩子函数拿到的是一个路由导航，使用 navigate("路由"); 即可跳转到对应的页面，如果路由路径为 /guide/xx 表示以guide为根路由改变当前url路径，如果路由路径为 guide/detail 表示guide以拼接前级路由改变前端路径(每次前端路径改变后，路由器就会监听此变化，并挨个去和路由进行比对，最后渲染对应的路由组件)
+  */
+  ```
+
+  
 
 + 路由
 
@@ -1304,7 +1843,7 @@
        useMatch
        	作用
        		返回当前匹配信息，对标5.x中的路由组件的match属性。
-       		每次打开一个新路由时，useMatch方法就会调用一次，如果能匹配到当前前端路由则进行匹配，否则不			错处理
+       		每次打开一个新路由时，useMatch方法就会调用一次，如果能匹配成功就以对象形式手机该路由信息，否则为null
        	使用
   		   import {useMatch} from"react-router-dom";
               export default function Login() {
@@ -1374,6 +1913,9 @@
     <Input.Password autoComplete="on" /> 
    2. 使用npm 下载 @craco/craco 时，可能报错，尝试使用yarn下载
    3. 如果自定义主题颜色无法成功修改，检查依赖包是否都下载了(查看package.json)
+   4. menu组件只能被渲染一次，因此需要注意antd配合react组件编写问题(逻辑需编写严谨，不能渲染多个相同的组件，否则会报错(很难定位的错误))
+   5. antd有自己的一套默认样式，如果使用了antd导致布局于实际位置有冲突，可以自己重新给掉样式以达到自己的预期
+   6. 当使用Input组件设置默认值无法满足预期时，可以外层包裹一个Form组件，此时通过该组件的setFieldsValue()和resetFields()来达到设置期待初始值
   */
   ```
 
@@ -1529,14 +2071,331 @@
                           validator:verifyConfig // 该函数由底层调用(调用时传入两个参数)
                       },
                   ]}>
+   
+  
    注意
    	form组件实际渲染的是一个form表单
    	Input 组件的label属性为 表单显示名，name 属性为表单 id
   */
+  
+   //使用 form实例达到强制更新Input框的初始值
+  	// form实例常用方法
+  		/*
+  			 form.setFieldsValue({category:extra.name}); 该方法需要传入一个形参为一个对象，其属性为一个指定Item的name属性值，value为该Item下Input的初始值，当指定后，即可给对应Item下的input框指定初始值
+  			  form.resetFields(); // 该方法会重置所有Input框的内容
+  		*/
+  // form = {form} 为指定form实例获取方式
+  const [form] = Form.useForm(); // 创建form控制实例
+   form.setFieldsValue({category:extra.name}); // 给Item的name为cateogry的Input组件指定初始值
+     form.resetFields(); // 清空所有表单内容
+  <Form initialValues={{remember:false}}  form={form} >
+  	<Form.Item  rules={[{ required: true ,message:"分类不能为空",pattern:/^\w*/}]} 				label={"分类："}name={"category"}>
+            <Input  placeholder={"请输入信息"} ref={inputRef}
+                onPressEnter={caller === "update" ? updateCategory : addCategory}/>
+      </Form.Item>
+  </Form>
   ```
   
 
 
+
++ menu组件使用
+
+  ```java
+  /*
+  介绍
+   	menu 组件没一个主侧边导航栏
+  */
+  import React from "react";
+  import {useNavigate} from "react-router-dom";
+  import {Menu, MenuProps} from 'antd';
+  import {
+      HomeOutlined, MailOutlined, AppstoreAddOutlined,
+      BarsOutlined, DatabaseOutlined, UserOutlined, AreaChartOutlined
+      , BarChartOutlined, LineChartOutlined, PieChartOutlined
+  } from '@ant-design/icons';
+  import {ROUTERS} from "../../config";
+  
+  const {
+      INDEX, MERCHANDISE, CATEGORY_MANAGE, MERCHANDISE_MANAGE, USER_MANAGE,
+      ROLE_MANAGE, ICON_MANAGE, BAR_GRAPH, LINE_GRAPH, PIE_GRAPH
+  } = ROUTERS;
+  
+  
+  type MenuItem = Required<MenuProps>['items'][number];
+  
+  /**
+    @description: 工厂函数，用于生成导航栏的规则
+  */
+  function getItem(
+      label: React.ReactNode,
+      key: React.Key,
+      icon?: React.ReactNode,
+      children?: MenuItem[],
+      type?: 'group',
+  ): MenuItem {
+      return {
+          key,
+          icon,
+          children,
+          label,
+          type,
+      } as MenuItem;
+  }
+  
+  /**
+    @description: 配置导航栏规则
+  */
+  const items: MenuProps['items'] = [
+      getItem('首页', INDEX, <HomeOutlined/>),
+  
+      getItem('商品', MERCHANDISE, <AppstoreAddOutlined/>, [
+          getItem('分类管理',CATEGORY_MANAGE, <BarsOutlined/>),
+          getItem('商品管理', MERCHANDISE_MANAGE, <DatabaseOutlined/>)
+      ]),
+      getItem('用户管理', USER_MANAGE, <MailOutlined/>),
+      getItem('角色管理', ROLE_MANAGE, <UserOutlined/>),
+      getItem('图标管理', ICON_MANAGE, <AreaChartOutlined/>, [
+          getItem('柱状图', BAR_GRAPH, <BarChartOutlined/>),
+          getItem('折线图', LINE_GRAPH, <LineChartOutlined/>),
+          getItem('饼状图', PIE_GRAPH, <PieChartOutlined/>)
+      ]),
+  ];
+  
+  let curPage = INDEX;
+  
+  /**
+    @description: 每次选中第一个导航Sider函数会重新调用依次
+  */
+  const Sider = () => {
+  
+      const navigate = useNavigate();
+      /**
+        @description: 用于路由跳转
+      */
+      const onClick: MenuProps['onClick'] = e => {
+  
+          if(curPage === e.key) return; // 减少页面无效重绘
+          curPage = e.key;
+          // 做一个排我，即自己点击自己无响应
+          switch (e.key) {
+              case INDEX:
+                   navigate(INDEX);
+                   return;
+              case CATEGORY_MANAGE:
+                  navigate(CATEGORY_MANAGE);
+                  return;
+              case MERCHANDISE_MANAGE:
+                  navigate(MERCHANDISE_MANAGE);
+                  return;
+              case USER_MANAGE:
+                  navigate(USER_MANAGE);
+                  return;
+              case ROLE_MANAGE:
+                  navigate(ROLE_MANAGE);
+                  return;
+              case BAR_GRAPH:
+                  navigate(BAR_GRAPH);
+                  return;
+              case LINE_GRAPH:
+                  navigate(LINE_GRAPH);
+                  return;
+              case PIE_GRAPH:
+                  navigate(PIE_GRAPH);
+                  return;
+  
+          }
+  
+      };
+      return (
+          <Menu
+              onClick={onClick}
+              style={{width: "100%", height: "100%"}}
+              defaultSelectedKeys={[INDEX]}
+              mode="inline"
+              items={items}
+          />
+      );
+  };
+  
+  export default () => <Sider/>;
+  ```
+
++ form组件
+
+  ```java
+  /*
+   注意
+   	每个标签的name值需不一致，如果一致则它们之前的数据共享
+  */
+  /**
+   @description: Form配置项介绍
+   @property: Item  ,为form中的一行数据，antd为其设置了对应的外边距
+   @config:
+          name = " 为该 From组件再渲染为真实dom时的id属性，其下关联的所有组件再渲染时会带上此id前缀"
+          labelCol = "是一个对象，对象中有个属性span{span:number}，设置Item组件内为Input的组件的Item整体显示偏移量(相当于offset)"
+          wrapperCol = "是一个对象，对象中有个属性span{span:number}，设置Item组件内为Input的组件的Input框宽度"
+          onFinish = "是一个函数，当点击提交后，通过前端验证规则调用此函数"
+          onFinishFailed= "是一个函数，当点击提交后，未通过前端验证规则调用此函数"
+  
+  */
+  
+  /**
+   @description: Form组件下 Item组件的配置项
+   @config:
+          label = "是一个字符串，设置显示内容"
+          name = " 为该 Item组件再渲染为真实dom时的id属性，其下关联的所有组件再渲染时会带上此id前缀"
+          rules = "此Item组件下Input组件的验证规则"
+              max input表单中输入的最大长度   number
+              min input表单输入的最小长度   number
+              message 不满足限制条件时，出现的内容 string
+              pattern 正则表达式匹配 RegExp
+              require 必填项  ，前面会出现 * 提示   true | false
+              validator 自定义匹配规则 ，接收的是一个函数，第一个参数为匹配规则(几乎不用使用 _占位接收)，第二个参数为当前input中的信息
+              注意：每一次修改input框时就会触发验证
+          wrapperCol = "是一个对象，该对象下常用属性offset:4 ,可以设置当前Item组件的偏移量"
+  
+  
+  */
+  ```
+
++ Input
+
+  ```java
+  /**
+   @description: Input 配置项介绍
+   @config
+          placeholder = "再表单没有内容时的虚拟占位"
+          size = "表单的大小  large | small | 默认
+          prefix = "icon组件图标 ，可以添加该图标组件到input表单首部"
+  */
+  ```
+
+  
+
++ table组件
+
+  ```java
+  c
+  /**
+   @description: columns是配置每一个列头的数组，数组中的每一个索引为一个对象，该对象内制定每一列的规则
+   @config: 常用配置项{
+      title : 为该列的名字
+      dataIndex: 为其列下的可以展示的对象属性，如 dataIndex：name,表示该列只展示name属性
+      render(text,record,index): 是一个函数，起到对原数据的装饰作用(如添加标签样式等)，装饰的标签最终会返回到该列下
+                                  第一个形参为当前列匹配到的属性值(如果没有匹配到任何信息则为当前行)
+                                  第二个形参为当前行对象 ， 第三个形参为当前的行(对象)位于数组中的索引位置
+                                  当此行不需要匹配内容时，可以调用render并返回一个虚拟dom来生产一个我们需要的内容
+                                  render为最终该列展示的内容，return什么就展示什么
+      filters: 表示过滤掉信息(过滤掉不包含选中信息的行)，此时会产生一个过滤图标，当点击此图标即可开始过滤
+          是一个数组，每个数组的索引存储一个对象，该对象下有text(展示内容),value(过滤的内容),
+          children(进行二次过滤,是一个数组，然后继续适配 text,value)属性
+      onFilter: 当点击过滤后底层会遍历每一行然后调用此函数，再调用时把每一个过滤的条件和被比较目标依次传入比较，因此我们只用做
+          简单相等判断 ， 如 record.name.indexOf(value) === 0;(底层会根据此返回值来判断此数据是否被过滤掉，false为过滤，true不过滤)
+      defaultSortOrder: 数据初始状态时，默认的排序规则 ，为一个string<"descend"|"ascend">
+      sorter: 需要传入一个函数(相当于sort函数，我们可以配置排序规则)，当点击列名时调用
+      sortDirections: 可以设置排列方向，是一个数组 [ ?<"ascend"> | ? <"descend">]
+      filterMode: 可以选择过滤框展示的类型， 可选值有 <"tree">
+      filterSearch : 可以选择是否能使用搜索方式过滤 ，可选值 true(可以搜索过滤) | false(不可以搜索过滤)
+      align： 选择当前列即列内容的对齐方式，可选值 <"left"|"center"|"right">
+      width: 可以设置当前列的显示宽度
+      fixed: 当前列数较多，且给当前table设置了scroll属性后，我们可以使用此属性对当前重要元素进行固定显示(相当于position:fixed)
+              可选值 <"left" | "right">
+    }
+   */
+  
+  /**
+   @description: table常用配置项
+   @config:
+   columns = "为一个数组，数组每一个索引为一个对象，该对象为当前列的信息和可接收的属性"
+   dataSource = "为一个数组，数组每一个索引为一个对象，每个属性对应列中的dataIndex进行匹配(key除外)"
+   rowSelection = "用来给每行数据的行头指定一个button类型 为一个对象，该对象的type属性为该button的type,
+   另外可以传入一系列方法来展示和改变button的状态"
+   pagination ="为一个对象，可以设置当前表单显示的数据列数如 {{pageSize:5}}"
+   scroll = "为一个对象，可以设置当前表单的滑动宽高"
+   title = "为一个函数，返回一个虚拟dom(组件)到表单头部"
+   footer = "为一个函数，返回一个虚拟dom(组件)到表单尾部"
+   rowKey = "指定每一行数据的key值"
+   */
+      
+   /*
+    注意
+    	如果后台一次返回所有数据(前端分页)，我们可以使用Table的pagination直接处理每页展示个数，其组件会自动适配页数；如果后台分页返回数据(后端分页)，其会返回总数据数，并根据传入的分页数据返回对应数据，我们进行pagination额外配置即可处理
+   */
+   // 解决 前端分页
+      <Table
+              dataSource={dataSource} // 指定匹配数据源
+              columns={columns}  // 指定了表格的列头
+              pagination={{
+                pageSize: 5, // 每页显示 5个数据
+              }}
+              rowKey="_id" // 指定每行数据的key为 _id属性
+            />;
+   // 解决 后端分页
+  	<Table
+              dataSource={dataSource}
+              columns={columns}
+              pagination={{
+                pageSize:4, // 每页显示 4个数据
+                total: this.state.totalPage, // 后端返回的数据总数，我们做一个预展示页
+                current: this.state.currentPage, // 当前的页数 
+                onChange: this.onChangeFun // 当点击时,获取对应页的页数,并向后端发送请求,获取该页的数据
+              }}
+              rowKey="_id"
+            />;
+  ```
+  
+
+
+
++ modal组件
+
+  ```java
+  /**
+   @description: Modal配置项介绍
+   @config:
+          title = "为该Modal框的标题"
+          visible = "该modal选项框是否显示，可选值 true | false，配合button完成启停"
+          onOk = ”当点击ok(确认)时，调用的函数“
+          onCancel = ”当点击取消时，调用的函数“
+          okText = "设置 成功按钮的文本"
+          cancelText = "设置 失败按钮的文本"
+          centered = "居中展示 modal对话框 ， 可选值 true | false"
+          closable = "是否显示可关闭按钮 ， 可选值 true | false"
+          width = "可设置 对话框宽度"
+          包裹的为显示的内容
+   @tips:
+          Modal对象下有 info,success,error,warning 四个方法，该方法接收一个对象，其对象配置和Modal配置差不多，可以显示对应效果
+      的提示框
+  
+  */
+  ```
+
++ Upload组件
+
+  ```java
+  /**
+    @description: fleList 为图片资源集，收集则图片的所有基础信息，是一个数组，数组中每个索引是一个对象(图片基础信息)
+      name : 为该图片的名字  string
+      status: 为当前图片的状态，不同状态对应的样式不同 	error | success | done | uploading | removed
+      url: 为该资源的基础路径
+      percent: 为当前图片上传的百分比
+      uid: 为当前图片的key ，不设置antd会自动生成
+  */
+  /**
+    @description: Upload 资源上组件
+      action ： 为上传的后端服务器地址
+      listType:  上传列表的内建样式（突变的展示方式），支持三种基本样式 text, picture 和 picture-card
+      method： 发送请求的方式 。 默认 post 请求
+      withCredentials： 上传是否携带 cookie 默认为 false
+      onPreview : 点击预览时调用的函数
+      onChange: 点击删除，上传中、完成、失败，调用的函数
+      onRemove： 点击删除调用的函数
+  
+   */
+  ```
+
+  
 
 ## redux解析
 
@@ -1968,6 +2827,7 @@
    	slice在编写为reducers后，其底层会创建对应的actions，因此我们可以直接导出actions和reducers,在我们使用 dispatch(actions)调用这些actions后，其会去调用对应的reducer
    	在reducer中，我们无法获取原state,而是获取的一个代理(该代理存储着原状态的映射)
    	当想对state的状态进行修改时，如果是改变该状态的指向就必须返回state(如 原状态为简单数据类型，当改变其后需要返回新的状态，如原状态指向一个引用数据类型时，如果想改变引用则必须返回新状态),否则不需要返回(往对象或数组里添加数据，因为此时是地址引用，所以不需要返回数据)
+   	只有使用普通redux才需要区分 容器组件和普通组件(因为使用搞了react-redux 报下的connect方法进行组件包装了)，使用redux-toolkit不需要进行组件区分，因为其使用的是钩子函数获得或修改状态(按照路由规范区分组件)
    	
    常用api	
    	createSlice
@@ -2473,7 +3333,598 @@
 
 
 
-## 钩子函数
+
+
+## 新特性
+
++ Fragment
+
+  ```java
+  /*
+   介绍
+   	在写jsx时，在虚拟dom的最外侧必须要使用一个标签进行包裹(以前为div，这样会导致无意义层级的包裹，因此可以使用Fragment或一个<></>进行包裹,此时就符合了jsx语法规范，且不会生成多余的包裹标签)
+   注意
+   	<></> 和 <Fragment></Fragment> 虽作用相似，但 <Fragment></Fragment> 可以接收一个key值，在遍历时如果需要使用包裹层级可以使用 Fragment包裹(效率高)
+   语法
+   	<Fragment>
+   		<div></div>
+   	</Fragment>
+   	或
+   	<>
+   		<div></div>
+   	</>
+   使用
+  import React, {Fragment} from "react";
+  
+  export default () => {
+      
+      return (
+          <>
+             <div>我是div</div>
+          </>
+      );
+  }
+  
+  */
+  ```
+
++ Context
+
+  ```java
+  /*
+   介绍
+   	Context和redux功能相似，可以集中管理状态，但Context通常适用于小项目的状态管理(如果状态躲起来了则必须创建更多的Context)
+   使用场景
+   	Context主要应用场景在于很多不同层级的组件需要访问同样一些的数据(或操作同一个状态)
+   	在开发中一般不用context,通常使用context封装react插件
+   参数分析
+   	Context
+   		为Provder，Consumer的对象，类组件可以通过指定Context的方式将共享信息挂载到该类的context属性下
+   	Provider
+   		用于包裹引入的组件，并传递需要共享的信息(通过属性value)
+   	Consumer(类和函数组件都可以通过该方式获取数据)
+   		作用与被包裹的组件，该组件会接收一个函数，该函数最终会被调用并且传入共享的信息value，其函数的返回值会被渲染到Consumer组件所在的位置
+   		
+   注意
+   	每个Context只能管理一种状态
+   	context主要是做一个数据共享，将父组件的数据传递给其包裹的组件
+   	当使用函数组件时，因为其的状态的返回值是状态和操作状态的函数，因此该值也可以通过context传递，当其包裹组件使用了该状态后，当调用了操作该状态的方法，引用了该状态的组件都会进行页面重写(组件更新调用)
+   
+   使用Context数据的两种方式
+   	声明该Provider提供的数据来自哪个Context对象(只适用于类组件)
+   	在Provider包裹的组件中适用 Comsumer 使用传递的状态(类组件和函数组件都可使用)
+   		如 
+   			<Consumer>
+                          {
+                              value => { // 该函数的由Provider调用，并把管理的数据传入
+                              
+                              }
+                          }
+                </Consumer>
+   
+   使用(使用 声明context来自的Context对象获取数据)
+   	// context.jsx ,创建context状态管理器
+   	import {createContext} from "react"; 
+      const MyContext = createContext({});
+      export const {Provider, Consumer} = MyContext;
+      export default MyContext;
+  	
+  	// A,jsx
+  	import React, {Component} from "react";
+      import MyContext,{Provider} from "./Context";
+      import B from "./B";
+      export default class A extends Component {
+          public static contextType = MyContext;
+          constructor(props:any) {
+              super(props);
+              this.state = {name :1};
+          }
+          render() {
+              console.log(this);
+              return (
+                  <>
+                      <h1>我是A组件</h1>
+                      <Provider value={this.state}> 
+                          <B/>
+                      </Provider>
+                  </>
+              );
+          }
+      }
+      
+      // b.tsx
+      import React, {Component} from "react";
+      import MyContext from "./Context";
+      import C from "./C";
+  
+      export default class B extends Component {
+  
+          public static contextType: any = MyContext;
+  
+          render() {
+              console.log(this);
+              const {name}:any = this.context;
+              return (
+                  <>
+                      <h1>我是b组件，
+                          {name}</h1>
+                      <C/>
+                  </>
+              );
+          }
+      }
+      
+      // c.tsx
+      import React, {Component} from "react";
+      import MyContext from "./Context";
+  
+      export default class C extends Component {
+          public static contextType = MyContext;
+  
+          render() {
+              const {name}: any = this.context;
+              console.log(this);
+              return (
+                  <>
+                      <h1>
+  
+                          我是c,{name}
+                      </h1>
+                  </>
+              );
+          }
+      }
+   
+   使用(使用 Consumer完成Provider提供的数据使用)
+   // context.tsx
+   import {createContext} from "react";
+  
+  const MyContext = createContext({});
+  export const {Provider, Consumer} = MyContext;
+  export default MyContext;
+  
+   // Fa.tsx
+   import React,{useState} from "react";
+  import {Provider} from "../Context";
+  import Fb from "./Fb";
+  export default () => {
+      const [count,setCount] = useState(0);
+      return (
+          <>
+              <h1>我是 Fa </h1>
+              <Provider value={{count,setCount}}>
+                  <Fb/>
+              </Provider>
+              <h1>我是a页面，当前计数为{count}</h1>
+          </>
+      );
+  }
+  
+  // fb.tsx
+  import React from "react";
+  import Fc from "./Fc";
+  import {Consumer} from "../Context";
+  export default () => {
+      return (
+          <>
+              <h1>Fb页面</h1>
+              <Consumer>
+                  {
+                      (value:any) =>{
+                          console.log(value);
+                          return <h1>我是b页面，当前计数为 {value.count}</h1>
+                      }
+                  }
+              </Consumer>
+              <Fc/>
+          </>
+      );
+  }
+  
+  // fc.tsx
+  import React from "react";
+  import {Consumer} from "../Context";
+  
+  export default () => {
+      return (
+          <>
+              <h1>Fc页面</h1>
+              <Consumer>
+                  {
+                      ({count, setCount}: any) => {
+  
+                          return (
+                              <>
+                                  <h1>{count}</h1>
+                                  <button onClick={() => {
+                                      setCount(count + 1)
+                                  }}> 我是c的按钮我来操作a的状态
+                                  </button>
+                              </>
+                          )
+                      }
+                  }
+              </Consumer>
+          </>
+      );
+  }
+  */
+  ```
+
+
+
+
++ 路由懒加载
+
+  ```java
+  /*
+   介绍
+   	可以提高用户体验，实现路由按需加载，避免用户依次加载过多没有看到的内容，导致页面显示缓慢
+   遇到的问题
+   	在使用antd Menu组件+react 懒加载时，导致的每次加载Menu组件会初始化展开
+   语法
+   	import {lazy,Suspense} from "react"; // 引入懒加载需要的组件类和函数
+   	const NotFound = lazy(()=>import("./NotFound")); // 此时使用NotFound路由时，就会触发懒加载，即只有跳转到该路由时，这个路由才会加载
+   	 	  <Suspense  fallback={}> // 在懒加载引入文件时，fallback的内容就会调用，充当过渡效果
+                  {element}
+              </Suspense>
+   使用
+   	// 路由配置
+   	import {lazy} from "react";
+      import {Navigate} from "react-router-dom";
+      import projectRouters from "./projectRouters";
+      import testRouters from "./testRouters";
+  
+      // 懒加载引入 ，随用随更新，增加用户体验
+      const NotFound = lazy(()=>import("./NotFound"));
+      export default [
+          ... projectRouters,
+          ...testRouters,
+          {
+              path: "/",
+              element: <Navigate to={"/login"}/>
+          },
+          {
+              path: "*",
+              element: <NotFound/>
+          }
+      ]
+      
+      //App.tsx
+      import React,{Suspense} from 'react';
+      import {useRoutes} from "react-router-dom";
+      import router from "./router";
+      import "antd/dist/antd.less";
+      function App() {
+          let element = useRoutes(router);
+          return (
+              <div className="App"> 
+              	// 懒加载路由组件时，Suspense组件的fallback内容就会加载充当过渡效果
+                  <Suspense fallback={<h1>加载中...</h1>}>
+                      {element}
+                  </Suspense>
+              </div>
+          );
+      }
+  
+      export default App;
+  
+  
+  
+   	
+   注意
+   	懒加载可能导致屏闪现象，需要处理
+   	基本上只有路由需要懒加载
+  */
+  ```
+
+  
+
+
+
++ renderProps属性
+
+  ```java
+  /*
+   前言
+   	一个组件的props属性可以接收任何数据，包括组件实例对象，因为这个特性，我们可以将一个组件或数据以props传递，然后另一个组件使用props下的key即可获取想要的属性(包括组件)
+   介绍
+   	我们可以通过props参数传递方式传递组件，通常该组件被函数包裹，此时另一个组件可以调用这个函数传入需要挂载到该组件实例对象上的数据，即可完成数据挂载操作
+   注意
+   	此方式通常使用函数进行包裹，方便传递props参数
+   使用
+   	export default class A extends PureComponent {
+          constructor(props: any) {
+              super(props);
+              this.state = {
+                  count: 1
+              }
+          }
+  
+          render(): React.ReactNode {
+              return (
+                  <>
+                      <h1>我是A组件</h1>
+                      <B count={12} render={(name:any)=> (<C name={name} />)}/>
+                  </>
+              );
+          }
+      }
+      interface Props {
+          count ?:number;
+          render ?:any;
+      }
+      interface State {
+  
+      }
+      class B extends PureComponent<Props,State> {
+          render(): React.ReactNode {
+              console.log(this.props);
+              return (
+                 <>
+                  <h1>我是B组件</h1>
+                     {this.props.render("张三")}
+                 </>
+              );
+          }
+      }
+  
+      interface CState {
+  
+      }
+      interface CProps {
+          name ?:string;
+      }
+      class C extends PureComponent<CProps,CState> {
+          render(): React.ReactNode {
+              return (
+                  <>
+                      <h1>我是C组件</h1>
+                      {<h2>my name is {this.props.name}</h2>}
+                  </>
+              );
+          }
+      }
+  */
+  ```
+  
+  
+
+### 类组件
+
++ setState()
+
+  ```java
+  /*
+   介绍
+   	setState是类组件改变当前组件状态的方法(修改后类组件重掉更新生命周期函数)
+   语法
+   	setState({}[,()=>{}]); // 对象+回调函数写法(此掉函数在setState改变完状态后被调用)
+   	setState{(state,props)=>{}} // 函数写法，底层在调用时，会传入两个形参，第一个为state,第二个为props 此时来简化我们的操作
+   	
+   使用
+   	import React, {Component} from "react";
+  
+      export default class CurNewFeature extends Component {
+          constructor(props: any) {
+              super(props);
+              this.state = {
+                  count: 0
+              };
+          }
+  
+          updateNumber = () => {
+              // setState 是异步任务，会进入微任务队列执行
+              let {count}: any = this.state;
+              // 对象式写法
+              this.setState({
+                  count: count + 1
+              }, () => {
+                  console.log("我在setState改变状态后执行");
+              })
+              // 函数式写法
+              this.setState((state: any, props: any) => {
+                  console.log(state, props);
+  
+                  return {count: state.count + 1};
+              });
+          }
+  
+          render() {
+              let {count}: any = this.state;
+              return (
+                  <>
+                      <h1>当前数字为{count}</h1>
+                      <button onClick={this.updateNumber}>+1</button>
+                  </>
+              );
+          }
+      }
+   
+   注意
+   	对象写法的state是函数式state的简写方式
+   	setState属于微任务，在执行时，只有当前作用域的所有简单任务执行完毕后才会开始执行
+  */
+  ```
+
+
+
+
++ 组件优化(PureComponent)
+
+  ```java
+  /*
+   引入
+   	Component类组件在使用setState改变状态后，会掉用一次更新声明周期函数，且render引用的其他组件实例对象即使没发生修改也会跟着更新一次，这是不合理的，因此需要进行优化(即只要我不改变组件渲染的内容时，就不需要重新调用其他组件)
+   解决方法
+   	（一旦结构复杂我们重写就非常麻烦）因为底层的shouldComponentUpdate总是为true,因此会产生此问题(每次调用setState是无限制放行，导致组件无意义更新)，我们可以重写shouldComponentUpdate来完成是否更新的判断，来达到优化目的(解决页面无更新时恶意更新状态导致效率降低)
+   	（常用）使用 PureComponent组件，其重写了shouldComponentUpdate的判断逻辑，帮助我们解决了setState更新状态时的shouldComponentUpdate声明周期函数的控制(只有前后状态或属性不一致时，才进行更新放行，否则不更新)
+   	
+  
+  
+  使用(PureComponent)
+  	export class AVC extends PureComponent {
+          constructor(props: any) {
+              super(props);
+              this.state = {
+                  name: "张三",
+                  feature: {
+                      height: 1.78,
+                      weight: 45
+                  },
+                  like: "play"
+              }
+          }
+  
+          public handlerClick = () => {
+              let {name,like}: any = this.state;
+              name = "李四";
+              like = 12;
+              this.setState({name,like});
+          }
+  
+          render() {
+              console.log("A is rendered");
+              let {name, feature: {height, weight},like}: any = this.state;
+              return (
+                  <>
+                      <h1>当前状态的信息是 ：姓名:{name} , 身高{height},体重{weight},爱好：{like}</h1>
+                      <button onClick={this.handlerClick}>更新</button>
+                      <B/>
+                  </>
+              );
+          }
+      }
+  
+      class B extends PureComponent {
+          render(): React.ReactNode {
+              console.log("B is rendered");
+              return (
+                  <>
+                      <h2>我是b组件</h2>
+                  </>
+              );
+          }
+      }
+  
+  
+   注意
+   	当父组件更新后，其包裹的组件(无论多少层)也会更新，因此我们需要重写shouldComponentUpdate以监听更新的状态变化，只有状态或数据发生改变时我们才更新
+  	PureComponent 重写的shouldComponentUpdate() 会先比较传入的地址与该组件状态的地址是否相同(如果相同认为是同一个状态，不予放行)，之后传入的新状态会和该组件的原状态去做一个状态值的判断(如果相同认为是同一个状态，不予放行)，因此在更新状态时，需传入一个独立的对象空间且该对象的属性值需和组件的状态值不相同
+  	在使用PureComponent时，因此其重写的shouldComponentUpdate() 特性，我们想改变一个复杂数据类型时，需要进行深拷贝然后再对值进行修改(PureComponent内部的shouldComponentUpdate()只有满足地址不同且状态不同时，才会进行放行，进而产生状态改变，页面重绘)
+  	深拷贝方式:如果知道数据的结构可以使用 ... 展开每一层复杂数据类型的结构然后放到一个新地址中，完成深拷贝，如果不知道其结构可以使用JSON.parse(JSON.stringify()) 完成深拷贝  
+  	js中使用 [] 就相当于 new Array() 创建了一个新数组，使用 {} 就相当于 new Object() 创建了一个新对象(开辟了一个独立的空间)
+  */
+  ```
+
+  
+
++ 错误边界
+
+  ```java
+  /*
+   介绍
+   	错误边界可以将错误限制再一个组件范围内，这样不会因为此组件的失误而导致页面全部无法显示情况(再没有使用错误边界前，只要一个组件错误就导致全部无法加载)
+   语法
+   	再可能出错的组件的父组件中使用下列写法，即可捕获其子组件的错误，将其维护到该组件的状态中即可捕获该错误，并做错误处理(类似于try-catch)
+   		static getDerivedStateFromError(error){ } // 和getDerivedStateFromProps一样需要返回一个状态到state中
+   		componentDidCatch(){} // 此声明周期函数可以查看子组件抛出的错误，多用于错误计算，并转发给后端
+  
+  使用
+  	export default class A extends PureComponent {
+          state = {
+              isError: ""
+          }
+  
+          // 用于捕获错误并维护到状态中
+          static getDerivedStateFromError(error: any) {
+  
+              return {isError: error};
+          }
+  
+          // 当发生错误时调用的此生命周期函数
+          componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+              console.log(error);
+              console.log(errorInfo);
+          }
+  
+          constructor(props: any) {
+              super(props);
+          }
+  
+          render(): React.ReactNode {
+  
+              return (
+                  <>
+                      <h1>我是A组件</h1>
+                      {this.state.isError ? <h1>网络不稳定，稍后再试</h1> :
+  
+                          <B count={12} render={(name: any) => (<C name={name}/>)}/>}
+  
+                  </>
+              );
+          }
+      }
+  
+      interface Props {
+          count?: number;
+          render?: any;
+      }
+  
+      interface State {
+  
+      }
+  
+      class B extends PureComponent<Props, State> {
+          render(): React.ReactNode {
+              console.log(this.props);
+              return (
+                  <>
+                      <h1>我是B组件</h1>
+                      {this.props.render("张三")}
+                  </>
+              );
+          }
+      }
+  
+      interface CState {
+  
+      }
+  
+      interface CProps {
+          name?: string;
+      }
+  
+      class C extends PureComponent<CProps, CState> {
+          constructor(props:any) {
+              super(props);
+              this.state = {a: 1};
+          }
+          render(): React.ReactNode {
+              // @ts-ignore
+              let {a} = this.state;
+              return (
+                  <>
+                      <h1>我是C组件</h1>
+                      {a.map((item:any)=>{
+                          console.log(item);
+                      })}
+                      {<h2>my name is {this.props.name}</h2>}
+                  </>
+              );
+          }
+      }
+  
+  注意
+   	错误边界再生产环境中可以完全使用(即组件的错误不会影响全局的错误)，而再开发环境中只能短暂生效(因为要告诉程序员错误所在点)
+   	错误边界多用于处理用户界面显示问题，当错误达到一定次数上线时，即可告知程序员解决bug(说明确实有错误，而不是网络波动导致的加载异常)
+   	错误边界现阶段只适用于类组件，且只能捕获其子组件产生的错误
+  */
+  ```
+  
+  
+
+### 钩子函数
 
 + 特别注意
 
@@ -2499,12 +3950,12 @@
 
   ```java
   /*
-   useState使用
-  
     介绍
     	  useState是16.8版本新增的一个钩子函数,它可以再函数组件中操作状态来触发函数的重新调用(重新渲染页面)
     语法
     	 let [state,setState] = useState("状态值") // 该钩子函数返回的是一个数组，其第一个位置上的是当前的组件的状态，第二个位置上的是改变状态的函数，当此函数被调用后 此组件(一般是函数)会被重新调用 
+    	setState(state+1); // 更新状态的第一种写法
+    	setState((state)=>{}) // 更新状态的第二种写法(函数写法)，底层会调用该函数并且把该setState对于的状态传入
     	
     使用
     	import React, {useState} from "react";
@@ -2600,21 +4051,86 @@
 
 
 
-## 新特性
-
-+ PureComponent
++ useRef
 
   ```java
   /*
    介绍
-  	React.PureComponent 与 React.Component 几乎完全相同，但 React.PureComponent 通过props和state的浅对比来实现 shouldComponentUpate()。
-  
-  注意
-  	在PureComponent中，如果包含比较复杂的数据结构，可能会因深层的数据不一致而产生错误的否定判断，导致界面得不到更新。
-  	如果定义了 shouldComponentUpdate()，无论组件是否是 PureComponent，它都会执行shouldComponentUpdate结果来判断是否 update。如果组件未实现 shouldComponentUpdate() ，则会判断该组件是否是 PureComponent，如果是的话，会对新旧 props、state 进行 shallowEqual 比较，一旦新旧不一致，会触发 update。
-  	浅对比：通过遍历对象上的键执行相等性，并在任何键具有参数之间不严格相等的值时返回false。 当所有键的值严格相等时返回true。shallowEqual
+   	和类中的ref作用基本一致，收集 虚拟dom元素到一个容器中
+   语法
+      let nodeRef = useRef(null);
+      <input type="text" ref={inputRef}/> // 此时这个input虚拟dom标签就被收集到了nodeRef容器的current属性下
+    注意
+    	此写法，和 React.createRef() 作用相同，一次只能存储一个虚拟dom标签
   */
   ```
+
++ useState,useEffect,useRef综合使用
+
+  ```java
+  /*
+   import React, {Component, useState, useEffect, useRef} from "react";
+  
+  export default () => {
+  	// 维护了一个状态，一个函数组件中可以有多个状态，但setState只能操作对于的state状态，当state状态更新时，该组件会重新渲染并进行diff对比
+      let [opeObj, setObj] = useState({name: "张三", age: 18});
+      let [count, setCount] = useState(0); // 维护了一个状态
+  
+      let inputRef = useRef(null); // 创建了一个ref容器
+      const changeUser = () => {
+          console.log(inputRef);
+  
+          // @ts-ignore
+          const value: string = inputRef.current && inputRef.current.value;
+          const celarSpaceValue = value.trim();
+          const newName = celarSpaceValue.substring(0, celarSpaceValue.indexOf(" "));
+          const newAge = celarSpaceValue.substring(celarSpaceValue.lastIndexOf(" "), celarSpaceValue.length);
+          console.log(newName, newAge);
+          // @ts-ignore
+          setObj((state: any) => ({
+              age: newAge,
+              name: newName
+          }));
+      }
+      // 使用副作用钩子函数，此钩子函数在该组件初次加载和卸载时执行
+      useEffect(() => {
+          console.log("此函数被调用了");
+          return () => {
+              console.log("此函数被卸载了");
+          }
+      }, [])
+  
+      const incremenrtCount = () => {
+          setCount(count + 1);
+      }
+      return (
+          <>
+              <h1>
+                  当前的用户是{opeObj.name},
+              </h1>
+              <h1>
+                  他的年龄是{opeObj.age}
+              </h1>
+              <div>
+                  <input type="text"
+                         placeholder={"此处添加更改的内容，格式如 张三 18"}
+                         ref={inputRef}
+                  />
+              </div>
+  
+              <p>
+                  <span>当前数量为{count}</span>
+                  <button onClick={incremenrtCount}>点击增加数字</button>
+  
+                  <button onClick={changeUser}>改变姓名和年龄(随机)</button>
+              </p>
+          </>
+      );
+  }
+  */
+  ```
+
+  
 
 
 
@@ -2658,7 +4174,51 @@
   */
   ```
 
+
++ **[ crypto-js](https://github.com/brix/crypto-js)**
+
+  ```java
+  /*
+   作用
+   	用于数据加密，还有 md5,sha1等
+   使用
+   	var CryptoJS = require("crypto-js"); // 引入包
   
+      // 加密
+      var ciphertext = CryptoJS.AES.encrypt('my message', 'secret key 123').toString();
+  
+      // 解密
+      var bytes  = CryptoJS.AES.decrypt(ciphertext, 'secret key 123');
+      var originalText = bytes.toString(CryptoJS.enc.Utf8);
+  
+      console.log(originalText); // 'my message'
+  */
+  ```
+
+
++ dayJS
+
+  ```java
+  /*
+   介绍
+   	可以获取当前时间
+   下载
+   	npm i dayjs
+   使用
+   	dayjs().format('YYYY MM-DD HH:mm:ss ')// 获取当前年月日 时间
+   注意
+   	YYYY获取的为当前年份
+   	MM 获取的是当前月
+   	DD 获取的是当前日期
+   	HH 获取的是当前小时
+   	mm 获取的是当前分钟
+   	ss 获取的是当前秒钟
+  */
+  ```
+
+  
+
+
 
 ## 前言
 
