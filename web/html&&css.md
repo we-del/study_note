@@ -10,6 +10,7 @@
    4. 百分比布局是相对与最近一级父类来说的，因此如果想达到铺满全屏的效果时，要依次给该标签的所有父标签设置像是(width:100%,height:100%)
    5. 绝对路径再服务器端和非服务器端的查找
    	再非服务器端打开时，也就是把当前本机当作一个服务器，绝对查找的根节点是基于本机的查找，服务器端打开时，就指定了一个服务器端的查找范围，再查找时，以当前服务器为根节点开始查找
+   6. 行内元素，无法设置宽高，在使用该元素且设置背景图片时，需要将其转换为行内块元素
   */
   ```
 
@@ -71,6 +72,22 @@
   ul.menu>li*6>a[href=#]{显示内容$}
   */
   ```
+
+
+
++ 文字一行显示，溢出隐藏
+
+  ```java
+  /*
+   {
+  	overflow: hidden;
+  	text-overflow:ellipsis;
+  	white-space:nowrap;
+  }
+  */
+  ```
+
+  
 
 
 
@@ -173,6 +190,23 @@
       <input type="checkbox" id="test" abc="1111" />
   </label>
   点击label的区域同样会触发到input的选中效果。利用这一特性，然后结合伪元素可以自定义单选框和单选按钮。
+  */
+  ```
+
+
+
+
++ 内容溢出使用滚动条滑行，并且避免出现滚动条
+
+  ```java
+  /*
+   // s
+    .food-list
+          height 990px
+          overflow auto
+          &::-webkit-scrollbar { // chrome safari
+              display: none;
+          }
   */
   ```
 
@@ -1852,20 +1886,4 @@ html中的行内元素：
       height: 100%;
     }
 ```
-
-
-
-# 文资溢出变为..
-
-```css
-/*
-	{
-	overflow: hidden;
-	text-overflow:ellipsis;
-	white-space:nowrap;
-}
-*/
-```
-
-   
 

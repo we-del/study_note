@@ -295,7 +295,6 @@
 
   ```java
   /*
-  受控组件以类的方式定义，非受控组件使用函数方式定义？
   ==================================================
    // 关于js
    1. 在js中要注意this指向问题，this一般指向其调用者，但js中箭头函数this指向和外层this指向一致，函数的返回值无异常(返回给调用者)， 因此在特殊使用我们可以使用call,apply,bind 去改变函数this的指向
@@ -340,12 +339,11 @@
    4. 类组件 以 <Component  name={"张三"}/> 传递的参数会被放到该实例对象的props属性下，以<Component>张三</Component> 接收的参数会被放到 该实例对象下的props属性下的children属性下；
    	函数组件 以 <Component  name={"张三"}/> 传递的参数会被放到该实例函数组件的第一个参数上(为一个对象，key value为传入的组件参数)，以<Component>张三</Component> 接收的参数会被放到 该实例函数组件的第一个参数下的children属性下 
    5. 创建类组件实例 就相当于一次把所有类组件相关配置集成到了一个实例对象中，而创建函数组件可以把自己需要的组件相关配置进行引入，来达到一个按需引入目的(所以函数组件比类组件在日常使用中更具有优势)
-   
+   6. 函数组件在使用useState更新状态后，会重新调用一次该函数组件(其中所有非钩子函数都会进行初始化) 。 类组件在使用setState改变状态后会第哦啊用一次更新时的生命周期函数(使用PureComponent后会对当前更新做判断)
     ==================================================
    // axios请求发送
    	1. axios发送post请求后台可能无法正常接收，进行一下配置代码即可正常接收
-   	
-  
+   
       import {HOST, PORT, LOGIN} from "../../../config";
       import Qs from "qs";
       // 设置post请求头消息
@@ -453,6 +451,7 @@
    1. ts 严格限制数据类型，如果该数据在原数据里不存在可预定义，无法预定义可设置为any类型
    2. ts使用 | ? 来完成 方法的重载， 如 fn1(content:string[]|string ,comment ?:string) , 再使用时再去
    3. 直接指定一个对象的接收的所有属性和其值的数据类型，相当于给定了一个接口进行限制，不过此接口在对对象时起限制作用。在对类时，是接口作用(类需要实现接口的所有属性和方法(java中的接口只用实现方法，共享属性))
+   4. 作为形参的变量必须要生命变量类型(因为其不知道指向的是谁)，一个变量在指向其第一个常量时(也可以自己指定)，该变量的类型就该常量的类型，在后续指向中，中能指向其相同的类型(如 let a = 1; 这个a的类型是number，在其下程序中，a只能指向number类型数据)
   */
   ```
 
@@ -465,7 +464,7 @@
    补充
    	重载指，相同函数(方法)不同形参个数或类型即可构成重载
    注意
-   	在重载后，一个形参的数据类型如果可能接收多个值时，再实际使用时，需要对他的类型进行断言(即强制转换)，便于代码提示和语法检查
+   	在重载后，一个形参的数据类型如果可能接收多个值时，再实际使用时，需要对他的类型进行p断言(即强制转换)，便于代码提示和语法检查
    	
    示例
     const handlerOpposite = (title: string, content: string[]|string): React.ReactNode => {
@@ -608,7 +607,42 @@
 
 ## 技巧
 
++ 编码技巧
 
+  ```java
+  /*
+   1. 在做逻提交时，任何需要传输的数据可以放到一个对象里，最终在校验时，只需校验该对象即可
+   2. 函数组件在更新时，其非钩子函数得数据会被全部重新初始化，因此需要注意此时存储数据得对象或数组是否会被初始化而导致存储的数据丢失(如果会丢失则可以定义在全局(只会初始化一次),或以状态的方式定义(状态只会在页面首次加载时执行一次（采取了享元模式？ 无状态管理时获取状态，有状态则返回之前的状态）))
+   
+   注意
+   	localstore适合存储该网站上的通用信息（即每个用户相同的信息），不同的信息应该存到redux或状态里
+  */
+  
+  /**
+   @description: 记录更新用户信息， 此数据要么以常量得形式定义在全局，要么以状态得方式定义在函数组件中
+   (状态得值在初始化后不会因为组件得重绘而再次初始化 (useState得状态采取得是享元模式？即没有状态时运行初始化状态，
+   有状态时使用已有得状态))
+   @tips: 此信息得初始化必须在文件首次被加载时完成，不能以无状态数据定义在函数组件内部(，因为其得数据是在点击后获取，此时会触发一次
+   函数组件得重绘，导致该值又进行一次初始化，此时目标组件无法获得更新后得数据(得到得是初始化数据)
+   函数组件得重绘会把所有非钩子函数在进行一次初始化赋值 (虚拟dom采取diff算法方式重绘)
+   */
+  ```
+
+  
+
++ 对象在jsx中的遍历方式
+
+  ```java
+  /*
+   	 {
+   	 	// Object.keys(categoryObj) 收集对象中的所有属性，使用对象[属性] 获取对应的值
+           Object.keys(categoryObj).map((key: any) =>
+                   Option value={key} key={key}>{categoryObj[key]}</Option>)
+       }
+  */
+  ```
+
+  
 
 + 解决react报错问题
 
@@ -818,7 +852,7 @@
   	2. 再引入一个组件类时，如果没有指定组件名，则react会默认引入该组件下的index.jsx 文件
       3. 再引入一个组件类时，如果是jsx或js文件,则后缀可以不写
       4. 主流后台验证接收消息的方式有 ，cookie,session-cookie,token
-      
+      5. 使用 <Component {...obj} /> 可以展开一个对象的内容并放到一个新对象中，如果此时是写在组件属性参数上，则这个props属性会指向这个新对象
   */
   ```
   
@@ -950,6 +984,17 @@
   ![image-20220507110203337](D:\typora_import_images\typora-user-images\image-20220507110203337.png)
 
 ## 知识集中点
+
++ 组件联通图
+
+  ```java
+  /*
+   流程
+   	当一个组件被引入时，其组件所在的文件的所有代码会被执行，并分配一个独立的空间，外部只能获取其被暴露的部分，而无法访问其文件内的其他代码部分，如需访问，则需要被引入部分充当一个代理，帮助转发信息
+  */
+  ```
+
+  ![image-20220517170904231](D:\typora_import_images\typora-user-images\image-20220517170904231.png)
 
 + 传递props参数时的使用
 
@@ -1283,7 +1328,7 @@
    	 sendRequestByFetch = () => {
           let q = "v";
           let s = "stars";
-          let url = `https://api.github.com/search/repositoriess?q=${q}&sort=${s}`;
+          let url = `https://api.github.com/search/repositories?q=${q}&sort=${s}`;
           fetch(url) // 向url地址发送fetch请求(异步请求)，并返回一个 fulfill状态的promise实例(存储着请求的状态)
   
               // 得到该请求的状态，如果接收请求的地址不存在，则立刻抛出一个rejected状态的promise实例(其存储着错误信息)
@@ -1321,7 +1366,7 @@
   ```java
   /*
   注意
-  	包括 props,ref,context,PubSub,red
+  	包括 props,ref,context,PubSub,redu
    1. props 可以实现 父向子通信 
    
    2. ref 可以实现 子向父通信
@@ -1916,6 +1961,8 @@
    4. menu组件只能被渲染一次，因此需要注意antd配合react组件编写问题(逻辑需编写严谨，不能渲染多个相同的组件，否则会报错(很难定位的错误))
    5. antd有自己的一套默认样式，如果使用了antd导致布局于实际位置有冲突，可以自己重新给掉样式以达到自己的预期
    6. 当使用Input组件设置默认值无法满足预期时，可以外层包裹一个Form组件，此时通过该组件的setFieldsValue()和resetFields()来达到设置期待初始值
+   7. antd update组件实现手动上传需要后端配合？(未解决,需要后端配合，具体使用查看官方文档).customRequest可以堆action进行一次封装
+   8、 form的initValue为不受控值(再状态改变导致重绘时，不会重新赋予一次初始值，只有再首次被加载时才会赋予)，如果想让表单的初始值可控，应该使用 form.setFieldsValue
   */
   ```
 
@@ -2321,6 +2368,7 @@
    /*
     注意
     	如果后台一次返回所有数据(前端分页)，我们可以使用Table的pagination直接处理每页展示个数，其组件会自动适配页数；如果后台分页返回数据(后端分页)，其会返回总数据数，并根据传入的分页数据返回对应数据，我们进行pagination额外配置即可处理
+    	columns和dataSource的值必须是一个数组
    */
    // 解决 前端分页
       <Table
@@ -2391,8 +2439,148 @@
       onPreview : 点击预览时调用的函数
       onChange: 点击删除，上传中、完成、失败，调用的函数
       onRemove： 点击删除调用的函数
-  
+      beforeBupload : 把图片上传到服务器前调用的函数，如果没true表示上传，为false表示不上传
    */
+  
+  /*
+   注意
+   	Upload组件在传入图片时，默认上传，因此我们需要用到组件的一个钩子函数 beforeUpload ，其接收一个布尔值，当为true时表示上传，为false时表示不上传(我们自己控制上传逻辑)
+  */
+  
+  /*
+   // 点击上传后所有图片才会交给后端，而非上传一个图片就发给后端一次
+  import React, { useState } from 'react'
+  import { Modal, Upload,Button } from 'antd';
+  import { RollbackOutlined, CameraOutlined, PictureOutlined, PlusOutlined } from '@ant-design/icons';
+  import axios from 'axios';
+  
+  export default function Identify() {
+      const [isModalVisible, setIsModalVisible] = useState(false);
+      const [fileList, setFileList] = useState([])
+      let history = useHistory();
+  
+      const handleOk = () => {
+          const formData = new FormData();//创建formData对象，用于序列化文件
+          fileList.forEach(item => {
+          //将fileList中每个元素的file添加到formdata对象中
+          //formdata对Key值相同的，会自动封装成一个数组
+              formData.append('file', item.originFileObj);
+          });
+          axios({
+              method: 'post',
+              url: '',
+              data: formData
+          }).then(res => {
+              console.log(res.data.msg)
+              if (res.data.msg === 'success') {
+                  //上传成功后执行的函数
+              }
+          })
+          //清空fileList
+          fileList.length = 0;
+          setIsModalVisible(false)
+      };
+  
+  	//会话框的方法，可以忽略
+      const handleChange = (info) => {
+          setFileList(info.fileList)
+      }
+      const handleCancel = () => {
+          setIsModalVisible(false);
+      };
+      
+      const showModal = () => {
+          setIsModalVisible(true);
+      };
+      const uploadButton = (
+          <div>
+              <PlusOutlined />
+              <div style={{ marginTop: 8 }}>Upload</div>
+          </div>
+      );
+      return (
+          <div className='identify'>
+              <Modal title="上传图片" visible={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
+                  <Upload
+                      multiple={true}
+                      //陈列样式，现在是卡片式
+                      listType="picture-card"
+                      beforeUpload={() => {
+                         //阻止上传
+                          return false;
+                      }}
+                      onChange={(info) => { handleChange(info) }}
+                      action=''
+                  >
+                      {fileList.length >= 8 ? null : uploadButton}
+                  </Upload>
+              </Modal>
+             
+                  <Button onClick={() => showModal()} >
+                  上传图片
+                  </Button>
+              </div>
+          </div>
+      )
+  }
+  
+  
+  */
+  ```
+  
+
+
+
++ Select组件使用
+
+  ```java
+  /*
+    <Select
+         showSearch // 可搜索所有的选项
+         placeholder="搜索或下拉选择分类"  // 提示符
+         mode="multiple"  // 可以多选
+         optionFilterProp="children"   
+         defaultValue="" // 默认显示的值
+         onChange={(e) => {   // 在改变Select中的值时调用 ,e为当前Option的 value值
+             console.log(e);
+         }}
+     >
+         {
+             Object.keys(categoryObj).map((key: any) =>
+                 <Option value={key} key={key}>{categoryObj[key]}</Option>)
+         }
+     </Select>
+  */
+  ```
+
+
+
+
++ tree组件
+
+  ```java
+  /**
+    @description: Tree 组件常用配置项
+      @config:
+          checkable : tree结构中是否有复选框
+          defaultExpandAll： 初始化时展开所有的节点
+          onExpand : 为一个函数，当树结构被折叠或展开时调用，函数的第一个形参为此次操作受影响的节点key值
+          onSelect : 为一个函数，当某个树节点的文字本选中时调用，函数的第一个形参为此次被选中的节点信息
+          onCheck: 为一个函数，当某个树节点的复选框被选中时调用，函数的第一个形参为此次被选中的节点的key值
+          selectedKeys: 为一个数组，表示此时树中选中的节点(key值)
+          checkedKeys: 为一个数组，表示此时树中选中的节点复选框(key值)
+          expandedKeys: 为一个数组，表示此时书中展开的节点(key值)
+          autoExpandParent: 为一个 布尔值 true|false , 初始化时，是否展开所有树节点
+          treeData: 为树结构信息，为一个数组，数组里为一个个对象
+              treeData 对象配置
+                  title: 为此节点的展示信息
+                  key: 为该节点的Key值
+                  children: 为该树分支的子树节点(其仍可以包含 title,key,children属性)
+   */
+  /*
+   注意
+   	tree的控制需要配合状态使用，才能完成预期效果，否则页面不会重绘
+  */
   ```
 
   
@@ -4218,7 +4406,20 @@
 
   
 
++ echarts
 
+  ```java
+  /*
+   介绍
+   	前端的一个画图库。可以快速搭建一个柔美的图表
+   下载
+   	npm i echarts 
+   	npm i echarts-for-react // react中使用echarts
+   具体使用可查阅文档
+  */
+  ```
+
+  
 
 ## 前言
 
