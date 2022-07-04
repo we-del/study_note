@@ -1,11 +1,15 @@
-# Vue
+#   Vue
 
 + 集合
 
   ```java
   /*
-   1.<input type="number" > 表示限制输入的数据只能是数字
+   1.<input type="number" > 表示限制输入的数据只能是数字，此时与vue的代理数据源绑定后，其接收的数据就为number类型
    2. == 和 === 区别 ， == 只会判断底层在隐式转换后的boolean值数据是否相等， === 除了对boolean值做判断，还会对它们的类型做判断(typeof)
+   3. return 是同步执行的 （谁调用函数则return 就给谁，定时器中传入形参的函数的return是返回给调用者的，也就是j底层的）
+   4. 正则的test方法可以判断一个正则是否匹配一个字符串，如果需要完美匹配，我们可以使用在正则上加上^$限制
+   	const pattern = /^[1-9a-zA-Z_]+$/g; //以数字字母下划线开头一直匹配到结束都是包含 数字字母下划线的字符串为true，否则为false
+   	pattern.test("123`1`+232"); // false ,test只会匹配一次且该一次是否匹配决定正则的返回值，如此匹配匹配123就结束了，因为其不满足结束条件
   */
   ```
   
@@ -16,9 +20,10 @@
    1.line-height 可以调整一个元素的行距，当和盒子高度相同时，就呈居中状态
    2.padding 可以挤压内容，在设置了宽高时不向外扩展，没有设置时，向外扩张
    3. white-space nowrap 可以将多个dom元素汇成一行
+   4. margin & padding 在有些情况下会挤压盒子的大小(通常变大)，因此如果我们不希望这个变化，可以将其转换为一个弹性盒子(display: flex 即可)
   */
   ```
-
+  
   
 
 ## 前言
@@ -1132,7 +1137,7 @@
    	npm i pubsub-js
    语法
    	pubsub.subsribe("test",(_,data)=>{}); // 订阅消息 ， 返回一个订阅者id
-   	public.sublish("test",11); // 向指定端口发送消息(订阅该端口的位置都会接收到该消息)
+   	public.publish("test",11); // 向指定端口发送消息(订阅该端口的位置都会接收到该消息)
    	public.unsubscribe("subId"); // 删除指定订阅，需要传入订阅者id
   */
   ```
@@ -1301,7 +1306,7 @@
           
      作用域插槽
      	 介绍
-     	 	slot允许向待传入的被包裹的虚拟dom传入其当前组件的属性和方法，但其必须使用template标签进行包裹，且使用属性scope接收(scope接收的数据就是js表达式,且是一个对象)
+     	 	slot允许向待传入的被包裹的虚拟dom传入其当前组件的属性和方法，但其必须使用template标签进行包裹，且使用 v-slot:插槽名="接收名"接收(scope接收的数据就是js表达式,且是一个对象)
      	 使用
      	 	// Child.vue
      	 	    <div>
@@ -1312,10 +1317,10 @@
           // Father.vue
           	<Child>
                   <h1>孩子你真棒</h1>
-                  <template v-slot:nb scope="{desc}">
+                  <template v-slot:nb="{dataSource}">
                       <h1>你真nb</h1>
                       <h2>可以给我签个名吗</h2>
-                      <h2>{{desc}}</h2>
+                      <h2>{{dataSource}}</h2>
                   </template>
               </Child>
    
@@ -2284,4 +2289,1662 @@
   */
   ```
   
+  
+
+
+
+## 项目编写技巧
+
++ 使用 jsconfig.json配置全局路径
+
+  ```java
+  /*
+   介绍
+   	此方式配置全局路径后，可以在任何位置使用该别名获取对应的路径
+   创建
+   	在项目根目录下(和src，package.json灯同级目录)创建 jsconfig.json 文件，并写入如下配置
+   		{
+            "compilerOptions": {
+              "baseUrl": "./",
+              "paths": {
+                "@/*": [
+                  "src/*"
+                ]
+              }
+            },
+            "exclude": [
+              "node_modules",
+              "dist"
+            ]
+          }
+  */
+  ```
+
+  
+
++ vite+vue3+ts省略后缀
+
+  ```java
+  /*
+   vite.config.ts
+   	import {defineConfig} from "vite";
+      import vue from "@vitejs/plugin-vue";
+      import {join} from "path";
+      // https://vitejs.dev/config/
+      export default defineConfig({
+          resolve: {
+              alias: { // 配置文件别名
+                  '@': join(__dirname, "src"),
+              }
+          },
+          plugins: [
+              vue()
+          ],
+      });
+  
+   tsconfig.json 中添加如下配置
+   {
+   	...
+   	"compilerOptions":{
+   		... // 省略其他compiler配置
+   		   "baseUrl": ".",
+              "paths": {
+                "@/*": [
+                  "src/*"
+                ]
+              }
+   	}
+   	...
+   }
+  */
+  ```
+
+  
+
+## vue3
+
++ vue3 vs react
+
+  ```java
+  /*
+   1. 在状态方面
+   	vue
+   		vue3状态修改后，会重新调用所有get方法重新获得数据并进行虚拟dom树对比渲染有差异的部分(非状态数据只会在初始状态时显示一次，之后它们的数据改变后页面也不会进行呈现，只会状态进行更新)
+    	react
+    		状态修改后，类组件重新走一遍更新时的生命周期函数，函数组件为重新执行一次本函数内容，并进行前后虚拟dom树对比渲染有差异的部分
+  */
+  ```
+
+  
+
++ 集合
+
+  ```java
+  /*
+   vue2 和vue3开发工具互不兼容，需要独立下载
+   vue3 兼容 vue2的所有写法，但推荐使用vue3的写法(不要使用vue2的写法，在setup方法中无法获取到这些属性和方法)
+  */
+  ```
+
+  
+
++ vue3优势
+
+  ```java
+  /*
+   1. 打包速度，效率得到了极大提升
+   2. 源码升级，使用proxy代替defineproperty实现响应式，重写了diff算法，使其更高效。适配ts编写
+   3. 新特性， componentApi
+  */
+  ```
+
+  
+
++ vue3项目创建方式
+
+  使用 vue create app 选择vue3构建
+
+  使用 vite 构建
+
+  vite优势：按需加载使用的组件，webpack未全部打包后在呈现给服务器
+
+  ![image-20220616113111177](D:\typora_import_images\typora-user-images\image-20220616113111177.png)
+
+  ![image-20220616113342978](D:\typora_import_images\typora-user-images\image-20220616113342978.png)
+
+
+
++ vue3 main.js和vue2 main.js的差异
+
+  ```java
+  /*
+  	vue2 中 main.js需要我们自己实例化一个Vue的示例对象，然后通过render函数解析虚拟dom挂载到对于的真实dom上(太重了，为了一个资源挂载导致创建了一个过大的实例对象)
+  	vue3 中 main.js则使用一个其封装的工厂函数，我们调用该工厂函数，传入组件或虚拟dom即可返回一个轻量的对象(该对象上有一系列常用的vue的属性和方法)，然后使用mount方法完成挂载
+  	vue3 中 组件可以没有根标签，但vue2则必须有
+  	
+   注意
+   	在使用 vue3插件时
+  *
+  ```
+
+### composition api
+
++ 集合
+
+  ```java
+  /*
+   1. vue3的组合api实际上是对vue2中繁重的配置项进行了解耦，做了到了需要什么属性则调用对应的api进行包装(效果一致)，有效的减轻了打包体积
+   2. 组合api 只能在setup方法中使用
+   3. 一个由ref生成的引用代理对象，在script中使用时，需要使用.value获得其代理的value属性，在template中则直接使用该引用代理对象即可，vue底层会取获取该ref引用对象的value属性
+  */
+  ```
+  
+  
+
++ setup
+
+  ```java
+  /*
+   介绍
+   	setup是vue3中一个新的配置项，值为一个函数，是所有配置项的一个集合(data(state),methods等)，在其中书写的属性和方法经过返回后会被转换为 状态(data)和方法
+   	使用
+   		// 返回一个对象时，暴露的所有属性会被包装成状态，暴露的所有方法会包装成方法
+   		export default {
+                name: 'App',
+                components:{
+                  // HelloWorld,
+                },
+                setup(){
+                  let name = "张三";
+                  let age = 19;
+                  const show = ()=>{
+                    return `${name},${age}`;
+                  }
+                  return {name,age,show};
+                }
+              }
+  		
+          // 返回一个函数时，则该组件实例渲染的内容以该函数的返回内容为准
+           import {h} from "vue";
+          export default {
+              name: 'App',
+              setup() {
+                  let name = "张三";
+                  let age = 19;
+                  const show = () => {
+                      return `${name},${age}`;
+                  }
+                  return () => h('h1', `${name},${age}`);
+              }
+  
+          }
+  注意
+  	当setup方法返回的是一个函数时，则默认为模板函数，最终该组件显示的内容以该模板返回的为准
+  	setup函数在beforeCreate之前执行，且this指向为undefined
+  */
+  ```
+
+  ![image-20220616172128045](D:\typora_import_images\typora-user-images\image-20220616172128045.png)
+
+  ![image-20220617120308856](D:\typora_import_images\typora-user-images\image-20220617120308856.png)
+
+  父组件给子组件绑定自定义事件时，在vue3中，需要使用emits:[] 配置项配置接收的自定义事件，否则会出现警告，不影响使用
+
+
+
++ ref函数
+
+  ```java
+  /*
+   介绍
+   	ref函数是vue3新增的一个函数，和$ref收集的虚拟dom属性相同名但不冲突。ref可以将一个变量包装成一个状态，在调用了该函数后返回一个引用对象（refImpl ,全称为 reference implement）,该引用对象对该值进行了一个代理(和观察者模式的包装)，当改变其值后，页面会进行重绘
+   	
+   使用
+      <template>
+          <div>我叫{{name}}</div>
+          <div>我{{age}}岁了</div>
+          <button @click="change">改变</button>
+      </template>
+  
+      <script>
+          import { ref} from "vue";
+  
+          export default {
+              name: 'App',
+              setup() {
+              	// 对 name,age进行包装，包装成一个引用对象，并进行观察者模式监听
+                  let name = ref("张三");
+                  let age = ref(19);
+                  const show = () => {
+                      return `${name},${age}`;
+                  }
+                  const change = () => {
+                  	// 调用该对象的代理属性的set方法进行状态改变，从而重绘页面
+                      name.value = "李四";
+                      age.value = 10;
+                  }
+                  return {name, age, show, change};
+              }
+  
+          }
+      </script>
+  
+   注意
+   	setup中使用 ref函数完成状态包装，
+   	ref包装的数据为引用对象，在虚拟dom中使用时可以直接使用该对象，vue3底层会拿到该引用对象的value属性
+   	vue3中的ref对不同数据做不同的状态包装，当为基础数据类型时，使用数据劫持+代理完成(状态维护)页面重绘，当为复杂数据类型时，使用es6新特性 proxy完成数据代理及页面重绘
+   	复杂数据类型和基本数据类型都可以使用ref进行包装，升级为状态
+  */
+  ```
+
+
+
++ reactive
+
+  ```java
+  /*
+   介绍
+   	reactive用来快速将一个复杂数据类型包装成一个状态(进行代理包装)，并且可以无需像ref包装一样，使用value属性来获取代理，状态的改变更加方便
+   使用
+   	<template>
+          <ul>
+              <li v-for="i in hobby">
+                  {{i}}
+              </li>
+  
+          </ul>
+  
+          <ul>
+              <li v-for="(val,key) in behavior">
+                  {{key}} --- {{val}}
+              </li>
+          </ul>
+          <button @click="change">改变</button>
+      </template>
+  
+      <script>
+          import {ref, reactive} from "vue";
+  
+          export default {
+              name: 'App',
+              setup() {
+                  let hobby = reactive(["basketball", "football"]);
+                  let behavior = reactive({
+                      like: "1",
+                      we: "3"
+                  });
+                  const change = () => {
+                      hobby[0] = "soccer";
+                      behavior.like = "study";
+                  }
+                  return {change, hobby, behavior};
+              }
+  
+          }
+      </script>
+   注意
+   	reactive 只能将复杂数据类型包装成一个状态
+   	reactive 对于复杂数据类型包装状态的处理要优于ref,因为其直接使用的proxy代理包赚状态，而ref使用数据绑定+代理，获取及修改状态比较复杂
+  */
+  ```
+
+  ![image-20220616203710070](D:\typora_import_images\typora-user-images\image-20220616203710070.png)
+
+
+
++ reactive vs ref
+
+  ![image-20220617104842504](D:\typora_import_images\typora-user-images\image-20220617104842504.png)
+
+
+
++ vue2绑定状态 vs vue3 绑定状态
+
+  ```java
+  /*
+   vu2 使用 数据劫持+数据代理完成状态绑定
+   	当我们使用 一个状态后，实际上时调用了get方法其返回了原有的一个状态，当我们修改一个状态时，实际上时调用了set方法修改了状态，并且vue在其中进行了一次页面重回
+   	如果修改了一个没有set方法的数据则不会页面重绘
+   	vue 只会都某个属性进行数据劫持，如果是一个数组时，无法通过改变索引的原型来达到页面重绘(因为其没有绑定set方法，对象中的属性则绑定了set方法)，所以对数组进行修改时，要么使用vue封装过的push,splice等操作数组的方法(其的封装主要做了页面重绘)，要么就实现浅拷贝然后传入一个新数组
+  
+  vue3 使用 Proxy+Reflect和数据劫持来实现状态绑定
+  	介绍
+  		Proxy和Reflect是es6提出的新特性,Proxy它可以直接代理一个复杂数据类型，当使用代理操作原数据时，对其的修改进行拦截监视；Reflect则可以快速映射一个对象的地址，并对其属性进行修改或获取某个属性
+  	使用
+  		const {log} = console;
+      	 const person = {
+            name: "张三",
+            age: 13
+          };
+          // target为代理的目标对象，propsName为操作的属性，value为改变的值，以上对于的函数形参上的代表值，可以为任何数据，但获取值的位置不能发生改变
+          const p = new Proxy(person, {
+            // 使用该代理获取一个目标对象(包括数组)属性时会被该代理实例对象拦截，并调用get方法返回数据
+            get(target, propsName) {
+              log(target, propsName);
+              return Reflect.get(target,propsName); // 得到目标对象中的一个属性
+  
+            },
+            // 通过该代理删除一个属性时调用
+            set(target, propsName, value) {
+            	log();
+              log(target, propsName, value);
+              Reflect.set(target,propsName,value); // 修改目标对象中的属性
+            },
+            // 通过该代理删除一个属性时调用
+            deleteProperty(target, propsName) {
+              // delete 关键字可以删除一个数据，并返回一个布尔值(表示是否删除成功)
+              return Reflect.deletePropty(target,propsName); // 删除目标对象中的属性
+            }
+  
+          });
+  	注意        
+  		proxy代理实现了对一个复杂数据类型的深度监视，即只要其发生修改，vue就能检测到，并且进行页面重绘
+  		proxy代理是一个增强版的Object.defineProperty,它可以完成一个目标对象的代理，当通过代理改变数据时，通过配置项的get,set方法等完成操作，并作出反馈（如在set方法中进行原状态修改并进行页面重绘）
+  */
+  ```
+
+
+
++ computed
+
+  ```java
+  /*
+   介绍
+   	vue3的computed和vue2的computed写法基本一致，只不过vue3在vue2组件实例的基础上对每个功能进行了解耦，如果需要某个属性则需要引入对于的api然后调用
+   
+   使用
+   	<template>
+          <ul>
+              <li v-for="i in hobby">
+                  {{i}}
+              </li>
+          </ul>
+          <ul>
+              <li v-for="(val,key) in behavior">
+                  {{key}} --- {{val}}
+              </li>
+          </ul>
+          <button @click="change">改变</button>
+      </template>
+  
+      <script>
+          import {reactive,computed} from "vue";
+  
+          export default {
+              name: 'App',
+              setup() {
+                  let hobby = reactive(["basketball", "football"]);
+                  let behavior = reactive({
+                      like: "1",
+                      we: "3"
+                  });
+                  // 创建了一个计算属性
+                  let yourLike = computed(()=> behavior.like +"_"+behavior.we);
+                  const change = () => {
+                      hobby[0] = "soccer";
+                      behavior.like = "study";
+                  }
+                  // 将其挂载到状态中，一遍页面重绘
+                  behavior.yourLike = yourLike;
+                  return {change, hobby, behavior};
+              }
+  
+          }
+      </script>
+  
+  注意
+  	使用computed包装后的计算属性，返回的是一个 ComputedRefImpl 包装对象，在使用该计算属性时就调用get方法获得数据
+  	computed包装后的属性最终需挂载到状态中
+  	vue3和vue2computed属性写法一致(完整配置为一个Object.definedProperty对象，简单配置为一个函数，vue底层会将其转换为该对象的get方法)，只是做了解耦，提高了效率
+  */
+  ```
+
+
+
++ watch
+
+  ```java
+  /*
+   介绍
+   	vue2和vue3的watch作用和方法一致，就是配置方法不同，vue3使用函数完成配置
+   语法
+   	import {watch} from "vue";
+   	watch(target,()=>{},{}); 第一个参数为监听的状态，第二个参数为状态改变后执行的回调，第三个参数为携带的配置项，如 {deep: true,immediate:true} 
+   
+   使用
+   	<template>
+          <h2>{{count}}</h2>
+          <button @click="count+=1">+1</button>
+          <ul>
+              <li v-for="(val,key) in behavior">
+                  {{key}} --- {{val}}
+              </li>
+          </ul>
+          <button @click="change">改变</button>
+      </template>
+  
+      <script>
+          import {reactive,computed,watch,ref} from "vue";
+  
+          export default {
+              name: 'App',
+              setup() {
+                  let hobby = reactive(["basketball", "football"]);
+                  let behavior = reactive({
+                      like: "1",
+                      we: "3"
+                  });
+                  let count = ref(0);
+                  let yourLike = computed(()=> behavior.like +"_"+behavior.we);
+                  const change = () => {
+                      hobby[0] = "soccer";
+                      behavior.like = "study";
+                  }
+                  watch(behavior,(newV,oldV)=>{
+                      console.log(newV,oldV);
+                  },{immediate:true});
+                  watch(count,(newV,oldV)=>{
+                      console.log(newV,oldV);
+                  },{immediate:true});
+                  return {change, hobby, behavior,count};
+              }
+  
+          }
+      </script>
+   注意
+   	watch如果需要监听多个状态可以使用多个watch 1对1编写；也可以使用一个watch一对多编写，此时需要使用数组存储，在其中一个状态改变后，watch回调就会执行，其中第一个参数为当前全部状态的更新后的状态，第二个参数为当前全部状态的更新前的状态
+   	watch在监视Proxy实例对象时，newValue和oldValue都为最新的值(后期可能会优化？)，且默认为深度监视，无法关闭；监听简单数据类型则没有此问题
+   	如果需要监听Proxy实例对象的某个属性时(该数据是一个状态)，第一个参数需要写成一个函数，然后函数的返回值返回需要监听的状态来完成监听，此时watch会去调用这个函数拿到监视目标，(如果有多个则写成一个数组，其中一个状态改变时，就会调用形参2，并把改变前后的状态数组传入)。如果以此方式监听的是一个复杂数据类型，则需要配置 {deep:true}
+   	
+  
+  watchEffect函数
+  	介绍
+  		该函数可以完成状态的按需监听，哪个状态需要监听则写入该函数中即可，当该状态改变后，对应使用该状态的watchEffect 就会执行
+  	使用
+      	<template>
+      <ul>
+          <li v-for="i in hobby">
+              {{i}}
+          </li>
+  
+      </ul>
+      <h2>{{count}}</h2>
+      <button @click="count+=1">+1</button>
+      <ul>
+          <li v-for="(val,key) in behavior">
+              {{key}} --- {{val}}
+          </li>
+      </ul>
+      <button @click="change">改变</button>
+  </template>
+  
+  <script>
+      import {reactive,computed,watch,ref,watchEffect} from "vue";
+  
+      export default {
+          name: 'App',
+          setup() {
+              let hobby = reactive(["basketball", "football"]);
+              let behavior = reactive({
+                  like: "1",
+                  we: "3"
+              });
+              let count = ref(0);
+              let yourLike = computed(()=> behavior.like +"_"+behavior.we);
+              const change = () => {
+                  hobby[0] = "soccer";
+                  behavior.like = "study";
+              }
+              watchEffect(()=>{ // 当count 改变后，该函数则执行
+                  let a = count.value;
+                  console.log("count改变了");
+              })
+              watchEffect(()=>{ // 当  behavior.like 改变后该函数则执行
+                  let b = behavior.like;
+                  console.log("behavior.like改变了");
+              })
+              behavior.yourLike = yourLike;
+              return {change, hobby, behavior,count};
+          }
+  
+      }
+  </script>
+  
+  */
+  ```
+
+
+
+
+
++ vue3 vs vue2 (生命周期函数)
+
+  ```java
+  /*
+   介绍
+   	vue3 生命周期函数 在 vue2基础上做了完善，使用了 beforeUnmount() 和 unmount() 去代替了 beforeDestroy() 和 destroy() ,(进行了改名)
+   	vue3 生命周期函数在 beforeCreate() 和 created()阶段和 vue2不同，vue2为只要你创建了一个vue组件实例，则会进行beforeCreate() 和 created() 初始化，在判断是否有挂载节点，如果没有则进行等待 。 而vue3在创建实例的时候需要有挂载节点才会进行生命周期函数调用
+  	在vue3使用生命周期函数的时候可以当作方法写在配置项外层，也可以当作一个组合api 写在 setup 方法里，对应关系如下 
+  */
+  ```
+
+  ![image-20220617175552145](D:\typora_import_images\typora-user-images\image-20220617175552145.png)
+
+
+
+
+
++ 自定义钩子函数
+
+  ```java
+  /*
+   介绍
+   	自定义钩子函数和react钩子函数概念相似，语法为 use函数名() 完成调用并获取钩子函数返回值，达到了代码复用和程序解耦目的
+   
+   注意
+   	自定义钩子函数只能在setup中使用，且该函数中编写的都是组合 api
+  */
+  ```
+
+  使用![image-20220617182114381](D:\typora_import_images\typora-user-images\image-20220617182114381.png)
+
+  ![image-20220617182204366](D:\typora_import_images\typora-user-images\image-20220617182204366.png)
+
+  
+
+
+
++ toRef& toRefs
+
+  ```java
+  /*
+   介绍
+   	toRef和toRefs可以将一个从复杂数据类型里读取出来的所有属性进行一次数据代理(不使用toRefs则为一个普通的地址)，且该代理操作的还是原复杂数据类型里的数据(相当做了一个桥接)
+   语法
+   	toRef(obj,"name"); //  获取该对象下的name属性，并做了一个(ref)数据代理，返回引用对象到该行
+  	toRefs(obj); // 将该对象下的所有属性进行(ref)数据代理,返回引用对象到该行
+   
+   使用
+   	<template>
+          <ul>
+              <li v-for="i in hobby">
+                  {{i}}
+              </li>
+  
+          </ul>
+          <h2>{{count}}</h2>
+          <button @click="count+=1">+1</button>
+          <ul>
+              <li v-for="(val,key) in behavior">
+                  {{key}} --- {{val}}
+              </li>
+          </ul>
+          <button @click="change">改变</button>
+          {{like}} -- {{we}} --- {{job.salary}}
+          <button @click="like = we = job.salary = 1">data</button>
+          {{behavior}}
+      </template>
+  
+      <script>
+          import {reactive, computed, toRefs, ref} from "vue";
+  
+          export default {
+              name: 'App',
+              setup() {
+                  let hobby = reactive(["basketball", "football"]);
+                  let behavior = reactive({
+                      like: "1",
+                      we: "3",
+                      job: {
+                          salary: 4
+                      }
+                  });
+                  let count = ref(0);
+                  let yourLike = computed(() => behavior.like + "_" + behavior.we);
+                  const change = () => {
+                      hobby[0] = "soccer";
+                      behavior.like = "study";
+                  }
+                  behavior.yourLike = yourLike;
+                  console.log(behavior);
+                  return {change, hobby, ...toRefs(behavior), count,behavior};
+              }
+  
+          }
+      </script>
+  
+   注意
+   	toRefs会将该Proxy对象下的最外层属性包装成一个ref引用对象，在操作这些属性时，实际上实在操作Proxy代理的复杂数据类型数据
+   	ref也可以将一个对象下的属性包装成引用对象，但此方式是读取一个属性的值后，在进行引用包装，无法对原对象里的属性产生修改(toRefs是保留原对象的映射在进行引用包装，当其改变后是改变的原对象里的属性)
+  */ 
+  ```
+
+
+
++ shallowRef & shallowReactive
+
+  ```java
+  /*
+   介绍
+   	shallowRef和shallowReactive只会将当前最外层的数据包装成一个引用对象(状态)，而不会提柜去包装其内部属性，ref和reactive则会进行深度包装(引用对象)
+   注意
+   	使用shallowRef包装一个数据时，只会对简单数据类型做一个引用包装，复杂类型则不会(ref包装复杂数据类型使用数据代理+proxy，而proxy属于第二层因此不会进行包装，但可以通过修改地址指向来控制页面重绘，因为包装了第一层状态)
+  */
+  ```
+
++ readonly & shallowReadOnly
+
+  ```java
+  /*
+   介绍
+   	将一个地址包装成一个只读状态，即只能读取不能修改， readonly 对该地址中所有的属性包装成只读，readonly 只会对该地址的第一层属性包装成只读
+  */
+  ```
+
+  ![image-20220618112108441](D:\typora_import_images\typora-user-images\image-20220618112108441.png)
+
+
+
++ toRaw & markRaw
+
+  ```java
+  /*
+   介绍
+   	可以将一个收到vue3 组合api包装过的引用对象转换为原来的数据
+    注意
+    	toRaw 组合api 只能转换由 proxy代理的引用对象(状态)
+    	markRaw 可以标记一个地址为原始地址，当其被传入一个状态中时，不会被转换为状态，而是呈现默认地址中的值(默认会转换)
+  */
+  ```
+
+  ![image-20220618113736318](D:\typora_import_images\typora-user-images\image-20220618113736318.png)
+
+
+
++ customRef
+
+  ```java
+  /*
+   介绍
+   	自定义ref可以帮助我们改变内部逻辑，实现扩展功能(使用较少？我们可以在外部进行逻辑校验？)，可以对依赖项跟踪和更新触发进行显示控制
+      自定义ref可以让我们完成get(获取状态)和set(修改状态)的封装
+   使用
+   	  // 通过调用本函数获得一个自定义绑定的一个状态(ref)
+   	  function myRef(value){
+   	  			// 底层会调用我们传入的函数，获取状态返回规则
+                  return customRef((track, trigger)=>({
+                  	// 每次读取自定义ref调用的就是get方法获取数据
+                      get(){
+                        track(); // 只有使用了track函数，才能返回自定义状态
+                        return value;
+                      },
+                      // 每次修改自定义ref状态，调用的就是set方法修改数据
+                      set(newValue){
+                          value = newValue;
+                          // 提层也使用了trigger函数进行页面重绘？
+                          trigger();// 只有使用了trigger页面才会进行重绘
+                      }
+                  }))
+              }
+   
+  */
+  ```
+
+
+
++ provide & inject
+
+  ```java
+  /*
+   介绍
+   	provide 和inject 可以实现 当前组件与该组件实例的任意包裹层级实现数据传递。当前组件使用provide 组合api , 需要使用数据方使用 inject组合api 声明
+   	和react的context类似，但比context更简洁
+   使用
+   	// grandFather.vue
+   	<template>
+          <Father/>
+      </template>
+  
+      <script>
+          import {provide, reactive} from "vue";
+          import Father from "./Father";
+  
+          export default {
+              name: "GrandFather",
+              components: {
+                  Father
+              },
+              setup() {
+                  const behavior = reactive({
+                      purpose: "help me(grandFather) to coding"
+                  });
+                  provide("behavior", behavior); // 向被包裹组件提供begivor状态
+                  return {
+                      behavior
+                  };
+              }
+          }
+      </script>
+      
+      // Father.value
+      <template>
+          <Child/>
+          <div>i am father</div>
+      </template>
+  
+      <script>
+          import Child from "./Child";
+          export default {
+              name: "Father",
+              components:{
+                  Child
+              }
+          }
+      </script>
+      
+      // Child.vue
+      <template>
+          我是child
+          {{behavior}}
+      </template>
+  
+      <script>
+          import {inject} from "vue";
+  
+          export default {
+              name: "Child",
+              setup() {
+              	// 被包裹组件实例Child 使用提供的状态
+                  const behavior = inject("behavior");
+                  console.log("child====",behavior);
+                  return {behavior};
+              }
+          }
+      </script>
+  */
+  ```
+
+  
+
++ 响应式数据判断
+
+  ```java
+  /*
+   介绍
+   	响应式数据判断也是一个 组合 api ，它们可以判断一个数据是否是由对应响应式对象生成的
+  */
+  ```
+
+  ![image-20220618153319146](D:\typora_import_images\typora-user-images\image-20220618153319146.png)
+
+  ![image-20220618153331609](D:\typora_import_images\typora-user-images\image-20220618153331609.png)
+
+
+
++ 组合api(需要按需引入) vs 配置api(vue2时写的配置)
+
+  ```java
+  /*
+   vue2 虽然对每个配置实现了功能划分，但一旦功能点较多则会显得单个文件体积较大(不符合单一职责原则)，因此vue3 引入了comopistion api 对该现象进行了处理，通过配合 自定义hooks 来完成对应功能点的封装，然后使用方，直接使用该钩子获得返回值即可
+  */
+  ```
+
+
+
++ Fragment
+
+  ```java
+  /*
+   介绍
+   	在vue中，组件必须有一个根标签，但在vue3中，组件可以没有跟变迁，内部会将多个标签包含在一个Fragment虚拟元素中，这样减少了标签层级和内存占用
+  */
+  ```
+
+
+
++ teleport
+
+  ```java
+  /*
+   介绍
+   	teleport 可以选择一个组件实例或一个虚拟dom载入的位置，其有一个属性to(to的值为一个dom标签，为插入的位置),指定后，该组件渲染时，就会将其插入倒该标签内
+   使用
+   	 <teleport to="body"> 我来插入倒#app中</teleport> // teleport 包裹的内容会被插入到body标签下
+   注意
+   	to 的值 只能是一个dom标签，可以使用js的选择器进行选择，如 .app ,#root,body
+  */
+  ```
+
+
+
++ suspense
+
+  ```java
+  /*
+   介绍
+   	vue3 支持组件异步引入，即支持先加载完的组件实例先展示,后加载的组件后展示(vue2不能，必须等到所有的组件加载完毕才能显示), 和react按需加载类似，在一个组件还未加载完毕时，显示fallback里的内容，加载完后显示该组件(vue为显示default插槽里的内容)
+   语法
+   	import {defineAsyncComponent} from "vue"
+   	defineAsyncComponent(()=>import("./Child")) // 异步引入Child组件
+   细节
+   	在使用动态加载(异步引入)时，通常还配合Suspense组件实例一次使用，在该组件还未加载时，Suspense会进行一个过渡效果展示
+   	Suspense组件内容为两个插槽，需要异步加载的组件放到default插槽内，异步组件的过渡效果则放入fallback插槽内
+  */
+  ```
+
+  ![image-20220618163127247](D:\typora_import_images\typora-user-images\image-20220618163127247.png)
+
+  
+
+
+
+
+
+
+
++ vue全局api转移
+
+  ![image-20220618164005235](D:\typora_import_images\typora-user-images\image-20220618164005235.png)
+
+  
+
+  
+
++ vue其他修改
+
+  移除了键盘事件的自定义修饰符
+
+  
+
+  ![image-20220618164855204](D:\typora_import_images\typora-user-images\image-20220618164855204.png)
+
+  移除了native修饰符，vue3现在需要声明一个组件可以接收的自定义事件，没有声明的事件默认当原生事件处理![image-20220618165120541](D:\typora_import_images\typora-user-images\image-20220618165120541.png)
+
+  移除了过滤器
+
+  
+  
+  
+  
+  
+
++ 使用nextTick()钩子函数
+
+  ```java
+  /*
+   介绍 
+   	功能和vue2中的nextTick相同，只是组合api中采用了按需引入方式
+   使用
+   	import {nextTick} from "vue";
+  */
+  ```
+
+  
+
+
+
+#### setup语法糖
+
++ 注意
+
+  ```java
+  /*
+   1. 使用setup语法糖时，可以使用await关键字(vue底层会自适应判断，在适当位置添加async)
+   2. 在template虚拟dom中，使用的ref和reactive包装的状态 会默认获取其包装的值，如ref包装一个简单数据类型时，则获取的是value值，包装的为复杂数据类型时，则获取的是value下的proxy代理的target值
+   3. 在直接操作一个proxy对象时，实际上是在操作其代理的值，可以使用其值的属性和方法
+   4. vue2中 props:[] 进行了声明后就能直接使用，而vue3中 组合api使用defineProps声明后，是放到一个对象中进行保存，因此需要.属性或结果获取
+   5. 使用props,provide-inject 接收的父组件状态在进行获取对应的属性或方法后(原生属性或方法)原生响应式就丢失了(state),因为其改变了地址引用(此时不再是引用的状态，在重绘时也不会进行更新)，因此需要使用computed属性进行计算，得到当前状态的最新需要得到的数据(如果想进行原生状态对象的属性状态扩展可以使用toRef&toRefs)
+   6. 组合api computed和vue2中computed作用相同，配置方法也相同，只不过写法不同，在每次刷新都会获取状态过滤后的最新值(相当于对原状态右进行了一次代理过滤)；每次页面重绘时，使用了的computed属性的get方法就会重新调用一次，如果两次数据相同就不重新渲染，反之重新渲染
+  */
+  ```
+
++ 踩坑
+
+  ```java
+  /*
+   1. 使用 组合api编写vue后需要注意，每次页面重绘只会对状态和computed计算数据进行一个值的重新渲染，其他数据的改变只会依赖于页面首次渲染时的值(页面值会改变，但不会呈现在页面上，而是内存中，如果你想让其呈现把其定义为computed或状态即可)
+  */
+  ```
+
+  
+
++ 介绍
+
+  ```java
+  /*
+     组合式编程覆盖了配置项式编程的大多功能，并基于此做了简化，setup语法糖便是这种简化的载体，如果确认使用组合式api编程，则可以使用此语法糖写法，该写法底层和配置项式编程原理一致，但做了一些简化，如在引入一个组件文件时，我们不需要进行注册(vue底层完成注册)；编写的所有变量我们不需要return交给vue底层(vue底层会自己获取这些变量)，就可以在template中使用;我们不需要手动暴露组件(由vue底层完成组件暴露)
+    即在使用了setup语法糖后，我们不需要注册，return setup函数内容和暴露组件文件了，这些都由vue底层完成(配置项编写时，这些工作需要我们完成)
+   注意
+   	在使用setup语法糖后，就必须使用组合api获取特定的数据，如ref,reactive,computed,useStore等
+   	组合式api完美诠释了按需引入(需要什么特性就进行引入，符合react中函数组件的初衷)
+  */
+  ```
+  
+
+
+
++ 在组合api中使用 props,ref,emits,state(状态管理)
+
+  ```java
+  /*
+   1. 使用 props接收父组件传入子组件的参数
+   	介绍
+   		需要在从vue引入一个函数， defineProps ,调用此函数传入可接受的数据(和vue2props配置方法一致)
+  	使用
+      	import { defineProps } from 'vue'
+          const props = defineProps(["name","age"])  // 可以从外部接收一个name,age属性
+  
+   2. 使用 ref 收集一个组件实例对象或一个虚拟dom
+   	介绍
+   		vue3依然支持ref属性收集一个属性或一个虚拟dom，在组合api中使用时，使用 const ref属性值 = ref() 去接收对应的ref收集的数据
+   		在vue3中，当ref收集到的是一个组件实例时，获取的是其暴露的defineExpose({})里的内容
+  	使用
+      	// 在vue3中，ref收集的是一个组件实例时，在组合api中使用 const ref属性值 = ref() 接收时(接收的属性值要和ref收集时的相同)，拿到的是该组件使用 defineExpose() 暴露出来的值
+      	// 子组件
+      		<template>
+                  <p>{{data }}</p>
+              </template>
+  
+              <script setup>
+              import {
+                reactive,
+                toRefs
+              } from 'vue'
+  
+              const data = reactive({
+                modelVisible: false,
+                historyVisible: false, 
+                reportVisible: false, 
+              })
+              // 当该组件实例对象被ref收集时，暴露出形参1
+              defineExpose({
+                ...toRefs(data),
+              })
+              </script>
+  		
+          // 父组件
+          	<template>
+                  <button @click="onClickSetUp">点击</button>
+                  <Content ref="content" /> // 把该组件隐射到 ref中，取了一个别名content
+              </template>
+  
+              <script setup>
+              import {ref} from 'vue'
+  
+              // content组件ref
+              const content = ref() // 获取 ref对象content收集的映射 ，
+              // 点击设置
+              const onClickSetUp = ({ key }) => {
+                 content.value.modelVisible = true
+              }
+  
+              </script>
+              <style scoped lang="less">
+              </style>
+  	注意
+      	当ref函数返回值接收的变量名和ref在template接收的组件实例和虚拟dom 的属性值是相同时，则表示接收的是template中的组件实例或虚拟dom的映射 。 如果是一个组件实例，则此时获取的是该组件使用 defineExpose 暴露出来的数据 ； 也就是说 在const 变量 = ref(); 接收一个ref()包装的数据后,如果变量名和template中ref="xx"的属性名("xx")相同，则会优先获取这个虚拟dom或该组件暴露出来的数据
+      	
+   3. 使用 defineEmits 限制 可接收的自定义事件
+   	介绍
+   		使用 defineEmits 可以声明一个组件客接收的自定义事件，并将emit方法进行返回，此时我们可以调用此方法触发对应的事件即可(和vue2中触发自定义事件方法一致)
+   	<template>
+         <a-button @click="isOk">
+           确定
+         </a-button>
+      </template>
+      <script setup>
+      import { defineEmits } from 'vue';
+  
+      // emit
+      const emit = defineEmits(['visible'])
+      // 点击确定按钮
+      const isOk = () => {
+        emit('visible'); // 触发visible事件(可以携带参数)
+      }
+      </script>
+  
+  4. 使用ref& reactive创建一个自定义状态(ref还可以用来接收一个虚拟dom或组件的映射，此时需要接收的变量和ref收集时的变量相同)
+   注意
+   	组合api用于按需引入，原写法和vue2中一致，达到的效果也一致，但完成功能的方式不同
+  */
+  ```
+  
+  
+
+
+
+### ts编写
+
++ 注意
+
+  ```java
+  /*
+   1. 计算值将根据返回值自动推断类型
+   	如 const doubleCount = computed(() => count.value * 2) // 此时为number类型
+   2. 在获取一个变量下的属性或方法时，必须指明其的变量类型否则会报错
+   	如 在dom事件中，必须只能事件对象，否则无法获取需要的值
+   		const handleChange = (evt: Event) => {
+            console.log((evt.target as HTMLInputElement).value)
+          }
+   3. 其他ts规范和react中编写的一致        
+   4. 在vue3+ts的编写中，我们可以使用泛型来指定传入的类型，此时有更好的代码提示，和更少的发生错误
+   5. vue3+ts在大多情况下都是使用泛型进行类型约束，在可能为null 的部分进行类型断言即可
+  */
+  ```
+
++ 遇到bug
+
+  ```java
+  /*
+   1. 现阶段的vue 从一个 .vue文件中引入 组件和接口时，接口会进行警告(不会报错)，把该接口单独放到一个接口文件z
+  */
+  ```
+
+  
+
++ 创建ts-vue3项目
+
+  ```java
+  /*
+       # 1. Install Vue CLI, 如果尚未安装
+      npm install --global @vue/cli@next
+  
+      # 2. 创建一个新项目, 选择 "Manually select features" 选项 ，选择typescript即可
+      vue create my-project-name
+  
+      # 3. 如果已经有一个不存在TypeScript的 Vue CLI项目，请添加适当的 Vue CLI插件：
+      vue add typescript
+  */
+  ```
+
++ props属性中使用接口方式
+
+  ```java
+  /*
+    import {defineComponent, PropType} from 'vue';
+  
+      interface Book {
+          name: string;
+          behavior: () => void;
+          price: number;
+      }
+  
+      export default defineComponent({
+          name: 'HelloWorld',
+          props: {
+              msg: Object as PropType<Book>,
+              callback: {
+       		  type: Function as PropType<() => void>
+      		},
+          },
+      });
+  */ 
+  ```
+
+
+
++ reactive生成代理状态时，可以使用接口限制写为
+
+  ```java
+  /*
+      当声明类型 reactive property，我们可以使用接口：
+  
+          import { defineComponent, reactive } from 'vue'
+  
+          interface Book {
+            title: string
+            year?: number
+          }
+  
+          export default defineComponent({
+            name: 'HelloWorld',
+            setup() {
+              const book = reactive<Book>({ title: 'Vue 3 Guide' })
+              // or
+              const book: Book = reactive({ title: 'Vue 3 Guide' })
+              // or
+              const book = reactive({ title: 'Vue 3 Guide' }) as Book
+            }
+          })
+  */
+  ```
+
+
+
+
++ ref收集一个虚拟dom或组件实例对象时的写法
+
+  ```java
+  /*
+   1. 得到虚拟dom
+   	<script setup lang="ts">
+          import { ref, onMounted } from 'vue'
+  
+          const el = ref<HTMLInputElement | null>(null)
+  
+          onMounted(() => {
+            el.value?.focus()
+          })
+          </script>
+  
+          <template>
+            <input ref="el" />
+          </template>
+     </script>
+  
+   2. 得到组件实例对象暴露的值
+   	<script setup lang="ts">
+          import MyModal from './MyModal.vue'
+  
+          const modal = ref<InstanceType<typeof MyModal> | null>(null)
+  
+          const openModal = () => {
+            modal.value?.open()
+          }
+      </script>
+  */
+  ```
+
+  
+
+### vuex4
+
++ 介绍
+
+  ```java
+  /*
+   vuex4 在3的基础上进行了一些微小的改动，如新增了一个钩子函数 useState,可以获取当前vuex管理的状态(只能在setup中使用) ； 创建一个store 对象时使用 createStore 工厂函数创建(传入配置项后返回一个store对象)
+  */
+  ```
+
++ 使用
+
+  ```java
+  /*
+   import { useStore } from 'vuex'
+  
+  export default {
+    setup () {
+      const store = useStore()
+  
+      return {
+        // 使用 mutation
+        increment: () => store.commit('increment'),
+  
+        // 使用 action
+        asyncIncrement: () => store.dispatch('asyncIncrement')
+      }
+    }
+  }
+  
+  注意
+  	vuex4 仍然兼容 mapState,mapActions等，但这些方法只能用在配置式编写vue中，无法用在组合式编写vue中，复合式编写vue 只能使用 store获得状态对象，并进行进一步处理
+  */
+  ```
+
+  
+
+
+
+### vue-router4
+
++ 踩坑
+
+  ```java
+  /*
+   1. 编程式路由跳转到当前路由(参数不变)，多次执行会抛出NavigationDuplicated的警告错误
+   	因为 编程式路由导航(push,replace)默认有一个promise返回值，如果多次请求且不做处理时，会抛出此错误，可以传入两个空的函数，此时promise状态就为null 因此就解决了此问题
+   
+   2. 在使用vue-router4时，需要确认安装的版本是正确的
+   3. vue-router4的push-replace完成变成路由导航时，与 vue-devtool 不兼容，导致无法跳转，因此需要关闭打开工具(以后会解决)
+  */
+  ```
+
+  
+
++ vue-router3  ===> vue-router4 变化
+
+  ```java
+  /*
+   1. new Router 变成 createRouter
+   	// 以前是
+      // import Router from 'vue-router'
+      // 现在是
+      import { createRouter } from 'vue-router'
+  
+      const router = createRouter({
+        // ...
+      })
+   
+   2. 新的 history 配置取代 mode#
+  	mode: 'history' 配置已经被一个更灵活的 history 配置所取代。根据你使用的模式，你必须用适当的函数替换它：(以下函数都需要从vue-router中进行引入)
+      "history": createWebHistory()
+      "hash": createWebHashHistory()
+      "abstract": createMemoryHistory()
+   
+   3、 移动了 base 配置 
+   		补充：
+   			base路径指，在页面打开时默认添加上去的初始路径，之后所有的路由匹配都基于此基础路径后的部分开始路由匹配
+      	如
+      		import { createRouter, createWebHistory } from 'vue-router'
+                  createRouter({
+                    history: createWebHistory('/base/'), // 初始路径为 /base/ ，只有初始路径后的部分会参与路径匹配
+                    routes: [],
+                  })
+   
+   4. 删除了 fallback 属性
+   5. 删除了 *（星标或通配符）路由
+   	现在必须使用自定义的 regex 参数来定义所有路由(*、/*)：
+   		推荐写法： { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFound }, // 最后一个 * 号不能省略，否则在跳转时 / 会当作字符解析
+  ... d 		
+  */
+  ```
+
+
+
+
++ 组合api
+
+  ```java
+  /*
+   useRouter 在setup中 获得 $router对象
+   useRoute  在setup中 获得 $route对象
+   onBeforeRouteLeave 在 setup中 编写 组件内路由守卫
+   onBeforeRouteUpdate 	
+  */
+  ```
+
+
+
+
+
+### element-ui
+
++ 介绍
+
+  ```java
+  /*
+   和ant design 一样同为组件库(服务于vue) ，用法基本相同，更多的是属性api和功能
+   注意
+   	按需引入，或更优引入查询官网
+  */
+  ```
+
+
++ 自动引入配置(vite版)
+
+  ```java
+  /*
+  // 在vite.config.ts中添加如下内容
+  import { defineConfig } from "vite";
+  import vue from "@vitejs/plugin-vue";
+  import AutoImport from "unplugin-auto-import/vite";
+  import Components from "unplugin-vue-components/vite";
+  import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
+  // https://vitejs.dev/config/
+  export default defineConfig({
+    plugins: [
+      vue(),
+      AutoImport({
+        resolvers: [ElementPlusResolver()],
+      }),
+      Components({
+        resolvers: [ElementPlusResolver()],
+      }),
+  
+    ],
+  });
+  
+  */
+  ```
+
+
+
+
++ form常用属性和方法
+
+  ```java
+  /*
+    el-form常用配置项
+      ref 将该组件实例对象暴露出来得数据放到ref得指定属性下(在使用时使用相同属性名得变量名接收
+        如 const 相同ref属性 = ref<泛型>()
+      model 表示该form表单数据映射到得响应源对象
+      status-icon 表示显示所有表单得icon
+      rules 表示该form表单验证得操作函数(需要设置为reactive)
+      label-width 设置表单左距离
+    el-form-item
+      labal 表示当前表单得头部显示内容
+      props 表示该标签使用的一个数据验证属性(取值范围为 rules的reactive Proxy代理的属性)
+  
+   注意
+   	在将一个el-form收集到ref的指定属性下后，使用该指定属性名作为变量接收ref()的返回值时，获取的是其暴露出来的东西。即操作该表单的方法，包括 （validate，resetFields等），详情见文档
+  */
+  ```
+
+  
+
+
+### Pinia
+
+> 发音：piña ,  /peenya/ && 劈那 && 批俩 
+
+> 参考：https://segmentfault.com/a/1190000041554023
+
++ 介绍
+
+  ```java
+  /*
+   Pinia是新一代的状态管理工具，符合vuex5的所有提案(vue首推)，兼容性好，可以在vue2和vue3使用
+  */
+  ```
+
++ 响应式数据关联(重要)
+
+  ```java
+  <script lang="ts" setup>
+      import {ref, reactive, toRefs} from "vue";
+  
+      // 1.总结使用 Proxy代理时，指向(代理的)是原复杂数据类型(数据源对象)
+      // 2.使用 toRefs可以返回一个对象，该对象内是其源对象最外层响应式属性，
+      // 通过改变这些值可以映射到源对象上，并进行页面重绘
+      // 3.重要： 每次页面重绘 状态(和computed属性)都会重新调用get方法获得数据，
+      // 并进行前后对比，相同不更新，不相同则进行更新
+      // 4. pinia 的 storeTorefs 和 toRefs同理，都是将一个原对象的最外层属性进行一个ref对象包装，并使用对象方式返回，操作的都是原对象(storeToRefs是将该对象的state,和getters中的计算属性进行一个代理，并使用对象返回)
+  	// 5. 重要： reactive是对一个源对象进行代理(proxy)，toRefs是对一个源对象的最外层属性进行ref代理(返回一个对象包裹，因此我们可以解构获取需要的ref代理) ； pinia调用一个store函数后，返回的是一整个原仓库的Proxy代理(包含state,actions里的方法，和getters里的计算属性以及一些操作状态的方法)，使用storeToRefs是将该store对象的state,和getters中的计算属性进行一个代理，并使用对象返回 ，因此我们可以解构，两种方式完成的状态代理都是操作的同一个数据源，在某一个引用改变状态后会进行页面重绘，重新调用get方法获得源代理数据
+      // 6. 在页面重绘时，只有状态和computed属性（以及前后不相同key的资源三方引用）会进行重绘(重新调用get获取最新的数据)，其余非状态数据只有在页面首次加载时做初始化显示(在之后可以通过方法操作这些数据的变化，但不会呈现在页面上)
+      const count = ref(0);
+      const person = reactive({
+          name: "张三",
+          age: 13,
+          sex: "male"
+      });
+  
+      function computer() {
+  
+          // 在script中改变ref包装的引用对象时，
+          // 需要使用value调用其get和set代理方法更新数据和重绘页面
+          count.value++;
+      }
+  
+      function change() {
+          // person为一个Proxy代理对象，通过该代理对象修改属性时，
+          // 会调用set方法，其内通过Reflect.set()修改原对象中的数据，并进行页面重绘
+          person.name = `李${Math.floor(Math.random() * 10)}`;
+          person.age = Math.floor(Math.random() * 10) + 10;
+      }
+  
+      // 为了更好方便获取一个对象的某个响应式属性，因此需要使用toRefs
+      // 将一个复杂数据类型的最外层进行响应式包装(包装为一个ref引用对象)
+      // 该ref引用对象在script中使用时需要使用 .value得到或修改的代理值
+      // 在template中则可以直接使用，vue底层会使用该ref对象的value属性得到状态
+      // toRefs每调用一次就会返回一个对象，该对象内的所有属性就是其原对象最外层属性进行包装后的一个引用对象
+      const obj = toRefs(person);
+      console.log("person-toRefs", obj);
+      const {name, age} = obj;
+  </script>
+  
+  <template>
+      <h2>
+          {{name}} ---- {{age}}
+          <button @click="change">change</button>
+      </h2>
+      <hr>
+      {{count}}
+      <button @click="computer">add</button>
+  </template>
+  
+  
+  <style scoped lang="scss">
+  
+  </style>
+  
+  ```
+
+  
+
++ 技巧
+
+  ```java
+  /*
+   1. 通常使用复杂逻辑才能完成状态的修改时，将其写在action中即可
+   2. storeToRefs 用于将一个pinia store管理的proxy代理的最外层state对象中的最外层属性进行一次数据代理(升级为状态)，该代理后的数据可以直接解构(因为其已经包装为响应式的了)，并写入到template中(template中的数据可以直接获取一个代理对象的value属性)，在setup语法糖中则修改proxy代理的状态即可，页面会进行对应的状态更新(因为已经使用storeToRefs将其原对象中的最外层属性包装成了状态) ； 
+   	总结使用 toRefs()和storeToRefs()包装的ref代理属性适用于template中(底层会直接获得value的值)，不使用这些包装也行，只不过需要xx.xx获取需要数据，它们会将源对象的最外层属性包装为一个ref引用对象进行代理，当这些值改变后，页面会进行对应重绘
+   	注意
+   		storeTorefs和toRefs都是将一个原对象的最外层属性包装为一个状态，和proxy代理操作的都是同一个地址，因此一个引用将状态改变后 所有地方都会重绘(底层调用trigger()方法)
+   
+  注意
+  	vue3+pinia 达到最强状态，此时只需要配置单个store文件就能达到预期管理状态效果 ，reacrt-redux为4个，vuex为3个，redux-toolkit 为2个，pinia为一个
+  */
+  ```
+
+  
+
+
+
++ Pinia& Vuex
+
+  ```java
+  /*
+  Vuex： State、Gettes、Mutations(同步)、Actions(异步)
+  
+  Pinia： State、Gettes、Actions(同步异步都支持)
+  
+  Vuex 当前最新版是 4.x
+      Vuex4 用于 Vue3
+      Vuex3 用于 Vue2
+  
+  Pinia 当前最新版是 2.x
+  	即支持 Vue2 也支持 Vue3
+  
+  注意
+  	Pinia优于vuex推荐使用
+  */
+  ```
+
+  
+
++ Pinia核心特性
+
+  ```java
+  /*
+  1. Pinia 没有 Mutations
+  2. Actions 支持同步和异步
+  3. 没有模块的嵌套结构
+  	Pinia 通过设计提供扁平结构，就是说每个 store 都是互相独立的，谁也不属于谁，也就是扁平化了，更好的代码分割且没有命名空间。当然你也可以通过在一个模块中导入另一个模块来隐式嵌套 store，甚至可以拥有 store 的循环依赖关系
+  4. 更好的 TypeScript 支持
+  	不需要再创建自定义的复杂包装器来支持 TypeScript 所有内容都类型化，并且 API 的设计方式也尽可能的使用 TS 类型推断
+  5. 不需要注入、导入函数、调用它们，享受自动补全，让我们开发更加方便
+  6. 无需手动添加 store，它的模块默认情况下创建就自动注册的
+  7. Vue2 和 Vue3 都支持
+  	除了初始化安装和SSR配置之外，两者使用上的API都是相同的
+  8. 支持 Vue DevTools
+  	跟踪 actions, mutations 的时间线
+  	在使用了模块的组件中就可以观察到模块本身
+  	支持 time-travel 更容易调试
+  	在 Vue2 中 Pinia 会使用 Vuex 的所有接口，所以它俩不能一起使用
+  	但是针对 Vue3 的调试工具支持还不够完美，比如还没有 time-travel 功能
+  9. 模块热更新
+  	无需重新加载页面就可以修改模块
+  	热更新的时候会保持任何现有状态
+  10. 支持使用插件扩展 Pinia 功能
+  11. 支持服务端渲染
+  */
+  ```
+
+  
+
+
+
++ pinia使用
+
+  ```java
+  /*
+   安装
+   	npm i pinia
+   注意
+   	pinia对比vuex，(pinia)一个为分布式管理状态(分模块管理状态，按需引入需要用到的状态)，(vuex)一个是集中式管理状态(把所有状态集中管理)
+   	pinia管理的状态实际上是其内部做了一个proxy数据代理(以便页面重绘)，我们引入该状态文件后，调用其函数返回的就是其proxy代理的数据(。我们可以对其进行结构获取需要的状态，但此方法获取的数据并不是状态，需要storeToRefs进行浅响应式包装，和toRefs()原理一致)
+   	使用 storeTorefs将一个pinia的proxy代理对象的最外层对象包装成状态后，可以进行解构赋值获取数据，但这个状态包装使用的是 ref引用对象方式，因此需要使用该对象的value属性才可以获取状态(不方便)，现阶段还是推荐使用直接获取的proxy代理获得状态
+   	
+   挂载pinia        
+   	import { createPinia } from 'pinia'
+  	createApp(App).use(createPinia()).mount('#app')
+  
+   pinia基本配置
+   	import { defineStore } from 'pinia'
+   	
+   	// 和vuex3配置项大致相同
+      export const userStore = defineStore('user', {
+          state: () => {
+              return {  // 编写该store片管理的状态
+                  count: 1,
+                  arr: []
+              }
+          },
+          getters: { ... }, // 编写该状态库的计算属性
+          actions: { ... } // 把复杂的逻辑操作状态逻辑进行封装 ,action中的方法可以接收一个形参，也可以不接收而使用this得到当前state(此时不能使用箭头函数，因为其this和外侧this一致)
+      })
+  
+   访问state的方式
+   	<template>
+          <div>{{ user_store.count }}</div>
+          <button @click="handleClick">按钮</button>
+      </template>
+      <script lang="ts" setup>
+      import { userStore } from '../store'
+      import {storeToRefs} from "pinia";
+      const user_store = userStore() // 返回的是一个proxy代理，可以对其进行解构，但解构后的数据是其源数据(即如果是一个复杂数据类型则为一个Proxy代理，简单数据类型则为原类型)，此时简单数据类型没有数据绑定（即不是一个状态），因此需要使用 storeToRefs(userStore)包裹，将其最外层属性包装为状态(这种方式操作的是同一个对象，当改变后会映射到对应源对象的属性上)，需要注意的是 storeTorefs是将其外层进行一个ref数据代理,因此读取时需要使用.value才能触发其get()方法
+      const handleClick = () => {
+          // 方法一，直接使用该proxy代理触发状态修改
+          user_store.count++
+  
+          // 方法二，需要修改多个数据，建议用 $patch 批量更新，传入一个对象
+          user_store.$patch({
+              count: user_store.count1++,
+              // arr: user_store.arr.push(1) // 错误
+              arr: [ ...user_store.arr, 1 ] // 可以，但是还得把整个数组都拿出来解构，就没必要
+          })
+  
+          // 使用 $patch 性能更优，因为多个数据更新只会更新一次视图
+  
+          // 方法三，还是$patch，传入函数，第一个参数就是 state
+          user_store.$patch( state => {
+              state.count++
+              state.arr.push(1)
+          })
+          
+          // 方法四，当逻辑复杂时，使用该代理对象的action内的方法完成状态改变
+          user_store.change(); // 调用action里的change方法 进行状态改变
+      }
+      </script>
+  */
+  ```
+
+   
+
+
+
++ 综合使用
+
+  ```java
+  /*
+   // computer.vue
+   <script lang="ts" setup>
+      import {storeToRefs} from "pinia";
+      import {ref} from "vue";
+      import computer from "@/test/store/computer";
+  
+      const curNumber = ref(1);
+      const computerStore = computer();
+      console.log("computer:", computerStore);
+      // storeToRefs 可以包装原对象的最外层属性将其升级为状态(vue2代理)
+      // 该解构适用于template直接编写，而不适用于setup语法糖中的编写
+      // (ref引用对象在script中编写时每次获取值需要.value，而template中则不需要会直接获取value后的代理数据)
+      const {count, enRich} = storeToRefs(computerStore);
+  
+      // 调用action里的方法改变状态
+      function asyncAdd() {
+          computerStore.asyncAdd(curNumber.value);
+      }
+  
+      // 调用action里的方法改变状态
+      function evenAdd() {
+          computerStore.evenAdd(curNumber.value);
+      }
+  </script>
+  
+  <template>
+      <h2>当前和为：{{count}}</h2>
+      <h2>{{enRich}}</h2>
+      <select name="default" v-model="curNumber">
+          <option :value="1" id="default ">1</option>
+          <option :value="2">2</option>
+          <option :value="3">3</option>
+      </select>
+      <button @click="count+=curNumber">+</button>
+      <button @click="count-=curNumber">-</button>
+      <button @click="asyncAdd">异步+</button>
+      <button @click="evenAdd">偶数+</button>
+  </template>
+  
+  // computerStore.ts（）
+   // 2022/6/26 19:39
+    
+  import {defineStore} from "pinia";
+  
+  const count = 0;
+  export default defineStore("computer", {
+      state() {
+          return {count};
+      },
+      actions: {
+          // 异步+
+          asyncAdd(value: number): void {
+              setTimeout(() => {
+                  this.count += value;
+              }, 1000)
+          },
+          // 偶数+
+          evenAdd(value: number): void {
+              if (!(this.count % 2)) {
+                  this.count += value;
+              }
+          }
+      }
+      ,
+      getters: {
+          enRich(): number {
+              return this.count * 10;
+          }
+      }
+  });
+  */
+  ```
+
+  
+
+
+
+### vite
+
++ 介绍
+
+  ```java
+  /*
+   vite是新一代版本控制工具，其将所用到的模块进行按需加载，因此大大提高了打包效率
+  */
+  ```
+
+  
+
++ 使用
+
+  ```java
+  /*
+   npm create vite@latest my-vue-app -- --template vue-ts // 创建一个vite项目
+   注意
+   	vite创建项目后，首次需要自己安装所有依赖，其只是做了一个依赖收集(npm i)
+  */
+  ```
+
   
